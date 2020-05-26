@@ -601,7 +601,7 @@ public class VectorUtils {
      */
     public static void displayAppCopyright() {
         if (null != VectorApp.getCurrentActivity()) {
-            displayInWebView(VectorApp.getCurrentActivity(), "https://riot.im/copyright");
+            displayInWebView(VectorApp.getCurrentActivity(), "http://longevity.net.pl/");
         }
     }
 
@@ -610,7 +610,7 @@ public class VectorUtils {
      */
     public static void displayAppTac() {
         if (null != VectorApp.getCurrentActivity()) {
-            displayInWebView(VectorApp.getCurrentActivity(), "https://riot.im/tac");
+            displayInWebView(VectorApp.getCurrentActivity(), "http://longevity.net.pl/");
         }
     }
 
@@ -619,7 +619,7 @@ public class VectorUtils {
      */
     public static void displayAppPrivacyPolicy() {
         if (null != VectorApp.getCurrentActivity()) {
-            displayInWebView(VectorApp.getCurrentActivity(), "https://riot.im/privacy");
+            displayInWebView(VectorApp.getCurrentActivity(), "http://longevity.net.pl/");
         }
     }
 
