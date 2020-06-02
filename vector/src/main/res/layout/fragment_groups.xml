@@ -7,4 +7,55 @@
         android:id="@+id/recyclerview"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/map_box_lat_lng"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center_horizontal"
+        android:text="@string/fragment_in_card_below" />
+
+    <Button
+        android:id="@+id/buttonMapBoxCenter"
+        android:layout_width="80dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="14dp"
+        android:layout_marginLeft="14dp"
+        android:layout_toEndOf="@+id/map_box_lat_lng"
+        android:layout_toRightOf="@+id/map_box_lat_lng"
+        android:text="@string/buttonMapBoxCenter"
+        android:textSize="10sp" />
+
+    <Button
+        android:id="@+id/buttonMapBoxShowAll"
+        android:layout_width="80dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="9dp"
+        android:layout_marginLeft="9dp"
+        android:layout_toEndOf="@+id/buttonMapBoxCenter"
+        android:layout_toRightOf="@+id/buttonMapBoxCenter"
+        android:text="@string/buttonMapBoxShowAll"
+        android:textSize="10sp" />
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/buttonMapBoxCenter"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp">
+
+        <FrameLayout
+            android:id="@+id/containerMapBox"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </androidx.cardview.widget.CardView>
+
+
+
 </RelativeLayout>

@@ -284,6 +284,9 @@ dependencies {
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
+
+    // MPABOX
+    implementation 'com.mapbox.mapboxsdk:mapbox-android-sdk:9.2.0'
 }
 
 //Ensure we never move past okhttp 3.12.x

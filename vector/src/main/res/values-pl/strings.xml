@@ -552,12 +552,12 @@ Zauważ, że ta czynność spowoduje ponowne uruchomienie aplikacji i może to t
 
     <string name="action_exit">Opuść</string>
     <string name="actions">Działania</string>
-    <string name="bottom_action_groups">Społeczności</string>
+    <string name="bottom_action_groups">Mapa MPDIT</string>
 
-    <string name="home_filter_placeholder_groups">Filtruj nazwy społeczności</string>
+    <string name="home_filter_placeholder_groups">Filtruj dane mapy MPDIT</string>
 
     <string name="groups_invite_header">Zaproś</string>
-    <string name="groups_header">Społeczności</string>
+    <string name="groups_header">Mapa MPDIT</string>
     <string name="no_group_placeholder">Brak grup</string>
 
     <string name="send_bug_report_rage_shake">Potrząśnij wściekle, aby zgłosić błąd</string>

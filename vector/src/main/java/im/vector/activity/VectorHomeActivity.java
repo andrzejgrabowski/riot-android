@@ -62,6 +62,7 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.preference.PreferenceManager;
 
@@ -71,6 +72,15 @@ import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.google.android.material.bottomnavigation.BottomNavigationItemView;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationView;
+import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.camera.CameraPosition;
+import com.mapbox.mapboxsdk.geometry.LatLng;
+import com.mapbox.mapboxsdk.maps.MapboxMap;
+import com.mapbox.mapboxsdk.maps.MapFragment;
+import com.mapbox.mapboxsdk.maps.MapboxMapOptions;
+import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
+import com.mapbox.mapboxsdk.maps.Style;
+import com.mapbox.mapboxsdk.maps.SupportMapFragment;
 
 import org.jetbrains.annotations.NotNull;
 import org.matrix.androidsdk.MXDataHandler;
@@ -121,6 +131,7 @@ import im.vector.fragments.AbsHomeFragment;
 import im.vector.fragments.FavouritesFragment;
 import im.vector.fragments.GroupsFragment;
 import im.vector.fragments.HomeFragment;
+import im.vector.fragments.MpditMapFragment;
 import im.vector.fragments.PeopleFragment;
 import im.vector.fragments.RoomsFragment;
 import im.vector.fragments.signout.SignOutBottomSheetDialogFragment;
@@ -557,6 +568,91 @@ public class VectorHomeActivity extends VectorAppCompatActivity implements Searc
         PublicRoomsManager.getInstance().refreshPublicRoomsCount(null);
 
         initViews();
+
+
+    }
+
+    /**
+     * Tworzy mapę MapBox: MPDIT
+     */
+
+    private void CreateMapBox()
+    {
+        int d = 5;
+
+        //Bundle savedInstanceState = null;
+                //Bundle savedInstanceState = getSavedInstanceState();
+
+        // Mapbox access token is configured here. This needs to be called either in your application
+// object or in the same activity which contains the mapview.
+        Mapbox.getInstance(this, getString(R.string.mapbox_access_token));
+
+// Create supportMapFragment
+        //String tost = "mamy mapfragment";
+        SupportMapFragment mapFragment = null;
+        mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentByTag("com.mapbox.map");
+        //Toast.makeText(this, tost, Toast.LENGTH_SHORT).show();
+        if (mapFragment == null) {
+
+
+
+// Create fragment
+            //Toast.makeText(this, "FragmentTransaction", Toast.LENGTH_SHORT).show();
+            final FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+
+// Build mapboxMap
+            //Toast.makeText(this, "MapboxMapOptions", Toast.LENGTH_SHORT).show();
+            MapboxMapOptions options = MapboxMapOptions.createFromAttributes(this, null);
+
+            //Toast.makeText(this, "options", Toast.LENGTH_SHORT).show();
+            options.camera(new CameraPosition.Builder()
+                    .target(new LatLng(-52.6885, -70.1395))
+                    .zoom(9)
+                    .build());
+
+// Create map fragment
+            //Toast.makeText(this, "mapFragment=new", Toast.LENGTH_SHORT).show();
+            mapFragment = SupportMapFragment.newInstance(options);
+
+            if (mapFragment == null)
+                Toast.makeText(this, "mapFragment=NULL", Toast.LENGTH_SHORT).show();
+
+// Add map fragment to parent container
+            //Toast.makeText(this, "transaction", Toast.LENGTH_SHORT).show();
+            transaction.add(R.id.containerMapBox, mapFragment, "com.mapbox.map");
+            //Toast.makeText(this, "commit", Toast.LENGTH_SHORT).show();
+            try {
+                transaction.commitAllowingStateLoss();
+            } catch (Exception e) {
+                Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+
+            //Toast.makeText(this, "afterCommit", Toast.LENGTH_SHORT).show();
+
+
+
+        } else {
+            //mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentByTag("com.mapbox.map");
+        }
+
+
+        /*
+        if (mapFragment != null) {
+            mapFragment.getMapAsync(new OnMapReadyCallback() {
+                @Override
+                public void onMapReady(@NonNull MapboxMap mapboxMap) {
+                    mapboxMap.setStyle(Style.SATELLITE, new Style.OnStyleLoaded() {
+                        @Override
+                        public void onStyleLoaded(@NonNull Style style) {
+
+// Map is set up and the style has loaded. Now you can add data or make other map adjustments
+
+
+                        }
+                    });
+                }
+            });
+        }*/
     }
 
     /**
@@ -982,7 +1078,9 @@ public class VectorHomeActivity extends VectorAppCompatActivity implements Searc
                 Log.d(LOG_TAG, "onNavigationItemSelected GROUPS");
                 fragment = mFragmentManager.findFragmentByTag(TAG_FRAGMENT_GROUPS);
                 if (fragment == null) {
-                    fragment = GroupsFragment.newInstance();
+                    fragment = MpditMapFragment.newInstance();//GroupsFragment.newInstance();
+                    // MPDIT
+                    //CreateMapBox();
                 }
                 mCurrentFragmentTag = TAG_FRAGMENT_GROUPS;
                 mSearchView.setQueryHint(getString(R.string.home_filter_placeholder_groups));

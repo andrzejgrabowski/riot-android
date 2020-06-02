@@ -19,6 +19,8 @@ package im.vector.activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import com.mapbox.mapboxsdk.Mapbox
+import im.vector.R
 
 /**
  * This Activity is here only to display a logo when waiting for Riot Application to start
@@ -27,6 +29,10 @@ class VectorLauncherActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Mapbox access token is configured here. This needs to be called either in your application
+// object or in the same activity which contains the mapview.
+        Mapbox.getInstance(this, getString(R.string.mapbox_access_token));
 
         startActivity(Intent(this, LoginActivity::class.java))
         finish()

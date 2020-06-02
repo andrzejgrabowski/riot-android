@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+
+    <string name="mapbox_access_token">pk.eyJ1IjoicnR5c3R5MSIsImEiOiJja2FxanQzMXowMG5tMnFucW5kN3N5MmhoIn0.K_kNZQtfZ_mNb9d5W8-24g</string>
+    <string name="mapbox_access_token_sk">sk.eyJ1IjoicnR5c3R5MSIsImEiOiJja2F3YzBrdmwwNDZ3Mnhtem54azhtbjh4In0.E7BGkM1K5VbLsV0cJhbG1g</string>
+
     <!-- use to retrieve the supported languages list -->
     <!-- should the same value as the file name -->
 
@@ -2336,5 +2341,10 @@ Not all features in Riot are implemented in RiotX yet. Main missing (and coming 
     <string name="media_file_added_to_gallery">Media file added to the Gallery</string>
     <string name="error_adding_media_file_to_gallery">Could not add media file to the Gallery</string>
     <string name="change_password_summary">Set a new account password…</string>
+    <string name="user_location_permission_not_granted">brak dostępu do GPS</string>
+    <string name="user_location_permission_explanation">niezbędny jest dostęp do GPS</string>
+    <string name="fragment_in_card_below">Mapa z MapBox</string>
+    <string name="buttonMapBoxCenter">Centruj</string>
+    <string name="buttonMapBoxShowAll">wszystko</string>
 
 </resources>
