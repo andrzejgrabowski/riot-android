@@ -12,18 +12,22 @@
         android:id="@+id/map_box_lat_lng"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:gravity="center_horizontal"
+        android:layout_marginStart="2dp"
+        android:layout_marginLeft="2dp"
+        android:layout_marginTop="2dp"
+        android:layout_toEndOf="@+id/buttonMapBoxShowAll"
+        android:layout_toRightOf="@+id/buttonMapBoxShowAll"
+        android:textSize="10sp"
         android:text="@string/fragment_in_card_below" />
 
     <Button
         android:id="@+id/buttonMapBoxCenter"
         android:layout_width="80dp"
         android:layout_height="36dp"
-        android:layout_marginStart="14dp"
-        android:layout_marginLeft="14dp"
-        android:layout_toEndOf="@+id/map_box_lat_lng"
-        android:layout_toRightOf="@+id/map_box_lat_lng"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_marginStart="12dp"
+        android:layout_marginLeft="12dp"
         android:text="@string/buttonMapBoxCenter"
         android:textSize="10sp" />
 
@@ -48,7 +52,7 @@
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp">
+        android:layout_marginTop="48dp">
 
         <FrameLayout
             android:id="@+id/containerMapBox"

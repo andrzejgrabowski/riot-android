@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Gravity;
@@ -42,7 +43,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.BindView;
+import im.vector.MpditManager;
 import im.vector.R;
+import im.vector.VectorApp;
 import im.vector.activity.VectorGroupDetailsActivity;
 import im.vector.adapters.AbsAdapter;
 import im.vector.adapters.GroupAdapter;
@@ -88,7 +91,46 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
     private PermissionsManager permissionsManager = null;
     SupportMapFragment mapFragment = null;
     FragmentTransaction transaction= null;
+    long startTime = 0;
+    TextView mTextViewLatLng = null;
 
+    Handler timerHandler = new Handler();
+    Runnable timerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            long milis = System.currentTimeMillis() - startTime;
+            int seconds = (int) (milis/1000);
+            int minutes = seconds / 60;
+            seconds = seconds % 60;
+
+            if(mTextViewLatLng != null) {
+                try {
+                    VectorApp app = VectorApp.getInstance();
+                    if (app != null) {
+                        MpditManager mpdit = app.getMpditManger();
+                        if (mpdit != null) {
+                            //mTextViewLatLng.setText(String.format("%d:%02d  %.5f  %.5f", minutes, seconds, mpdit.mLat, mpdit.mLng));
+
+                            mpdit.sendGpsData();
+
+                            String s = mpdit.mLastExceptionMessage + " packet: " + mpdit.mLastPacket;
+                            mTextViewLatLng.setText(s);
+
+                        } else {
+                            mTextViewLatLng.setText("mpdit=null");
+                        }
+
+                    } else {
+                        mTextViewLatLng.setText("app=null");
+                    }
+
+                } catch (Exception e) {
+                    mTextViewLatLng.setText(e.getMessage());
+                }
+            }
+            timerHandler.postDelayed(this,500);
+        }
+    };
 
 
     @BindView(R.id.recyclerview)
@@ -162,6 +204,10 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
         //mAdapter.onFilterDone(mCurrentFilter);
 
         //CreateMapBox();
+
+        startTime = System.currentTimeMillis();
+        timerHandler.postDelayed(timerRunnable,500);
+        mTextViewLatLng = getActivity().findViewById(R.id.map_box_lat_lng);
 
     }
 

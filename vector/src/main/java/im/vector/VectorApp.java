@@ -19,15 +19,18 @@
 
 package im.vector;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -35,6 +38,7 @@ import android.os.Looper;
 import android.text.TextUtils;
 
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.ProcessLifecycleOwner;
 import androidx.multidex.MultiDexApplication;
 
@@ -188,8 +192,11 @@ public class VectorApp extends MultiDexApplication {
                     restartActivity(getCurrentActivity());
                 }
             }
+
         }
     };
+
+    private MpditManager mMpdit = null;
 
     @Override
     public void onCreate() {
@@ -272,6 +279,7 @@ public class VectorApp extends MultiDexApplication {
 
             /**
              * Compute the locale status value
+             *
              * @param activity the activity
              * @return the local status value
              */
@@ -359,7 +367,50 @@ public class VectorApp extends MultiDexApplication {
         PreferencesManager.fixMigrationIssues(this);
         initApplicationLocale();
         visitSessionVariables();
+
+        // MPDIT
+        CreateMpdit();
+
+
     }
+
+    private void CreateMpdit()
+    {
+        if(mMpdit != null)
+            return;
+
+        mMpdit = new MpditManager();
+        mMpdit.create();
+
+        // zbieranie danych GPS
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            //return;
+        }
+        else {
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 100, 0, mMpdit);
+        }
+
+        //locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 100, 0, mMpdit);
+
+        Thread mThreadSocket = new Thread(mMpdit);
+        mThreadSocket.start();
+
+    }
+
+    public MpditManager getMpditManger()
+    {
+        if(mMpdit == null)  CreateMpdit();
+        return mMpdit;
+    }
+
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
