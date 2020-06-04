@@ -31,11 +31,14 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.location.LocationManager;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
+import android.text.format.Formatter;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
@@ -49,8 +52,11 @@ import org.matrix.androidsdk.call.MXCallsManager;
 import org.matrix.androidsdk.core.Log;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -374,12 +380,56 @@ public class VectorApp extends MultiDexApplication {
 
     }
 
+
+    /**
+     * Get IP address from first non-localhost interface
+     * @param useIPv4   true=return ipv4, false=return ipv6
+     * @return  address or empty string
+     */
+    public static String getIPAddress(boolean useIPv4) {
+        try {
+            List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface intf : interfaces) {
+                List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
+                for (InetAddress addr : addrs) {
+                    if (!addr.isLoopbackAddress()) {
+                        String sAddr = addr.getHostAddress();
+                        //boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
+                        boolean isIPv4 = sAddr.indexOf(':')<0;
+
+                        if (useIPv4) {
+                            if (isIPv4)
+                                return sAddr;
+                        } else {
+                            if (!isIPv4) {
+                                int delim = sAddr.indexOf('%'); // drop ip6 zone suffix
+                                return delim<0 ? sAddr.toUpperCase() : sAddr.substring(0, delim).toUpperCase();
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) { } // for now eat exceptions
+        return "";
+    }
+
+
     private void CreateMpdit()
     {
         if(mMpdit != null)
             return;
 
         mMpdit = new MpditManager();
+
+
+        //WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
+        //String ip = wm.getConnectionInfo().getIpAddress();//Formatter.formatIpAddress();
+        WifiManager wifiMan = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+        WifiInfo wifiInf = wifiMan.getConnectionInfo();
+        int ipAddress = wifiInf.getIpAddress();
+        String ip = String.format("%d.%d.%d.%d", (ipAddress & 0xff),(ipAddress >> 8 & 0xff),(ipAddress >> 16 & 0xff),(ipAddress >> 24 & 0xff));
+
+        mMpdit.mDeviceIP = ip;
         mMpdit.create();
 
         // zbieranie danych GPS
