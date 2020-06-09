@@ -11,8 +11,8 @@ package im.vector;
         */
 public class MeshNode
 {
-    double lat;
-    double lng;
+    public double lat;
+    public double lng;
     public String data;
     public String IP;
     public String ID;

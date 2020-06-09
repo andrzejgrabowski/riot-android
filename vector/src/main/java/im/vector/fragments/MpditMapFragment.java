@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.BindView;
+import im.vector.MeshNode;
 import im.vector.MpditManager;
 import im.vector.R;
 import im.vector.VectorApp;
@@ -100,6 +101,7 @@ import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconOffset;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -113,6 +115,18 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
 
 
     // MAPBOX-MPDIT
+    private static final String LAYER_ID_UBIQUITY = "UBIQUITY_LAYER_ID";
+    private static final String LAYER_ID_GOTENNA = "GOTENNA_LAYER_ID";
+    private static final String LAYER_ID_MPDIT = "MPDIT_LAYER_ID";
+
+    private static final String UBIQUITY_ICON_ID = "UBIQUITY_ICON_ID";
+    private static final String GOTENNA_ICON_ID = "GOTENNA_ICON_ID";
+    private static final String MPDIT_ICON_ID = "MPDIT_ICON_ID";
+
+    private static final String SOURCE_GOTENNA_ID = "SOURCE_GOTENNA_ID";
+    private static final String SOURCE_MPDIT_ID = "SOURCE_MPDIT_ID";
+    private static final String SOURCE_UBIQUITY_ID = "SOURCE_UBIQUITY_ID";
+
 
     private static final String CIRCLE_LAYER_ID = "CIRCLE_LAYER_ID";
     private static final String MARKER_LAYER_ID = "MARKER_LAYER_ID";
@@ -120,9 +134,21 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
     private static final String MARKER_ICON_ID = "MARKER_ICON_ID";
     private static final String PROPERTY_ID = "PROPERTY_ID";
     private static final String PROPERTY_SELECTED = "PROPERTY_SELECTED";
+    private static final String PROPERTY_VISIBLE = "PROPERTY_VISIBLE";
 
     private MapboxMap mapboxMap = null;
     private FeatureCollection featureCollection;
+    private FeatureCollection ubiquityCollection;
+    private FeatureCollection gotennaCollection;
+    private FeatureCollection mpditCollection;
+
+    private static final int UBIQUITY_TABLE = 0;
+    private static final int GOTENNA_TABLE = 1;
+    private static final int MPDIT_TABLE = 2;
+    private int mSelctedID = -1;
+    private int mSelectedTable = -1;
+    private String mSelectedProprtyID = "-1";
+
     private PermissionsManager permissionsManager = null;
     SupportMapFragment mapFragment = null;
     FragmentTransaction transaction= null;
@@ -142,6 +168,11 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
             int minutes = seconds / 60;
             seconds = seconds % 60;
 
+            // odświerzamy dane dotyczące położeń
+            initFeatureCollection();
+            refreshSource();
+
+
             if(mTextViewLatLng != null) {
                 try {
                     VectorApp app = VectorApp.getInstance();
@@ -152,8 +183,10 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
 
                             mpdit.sendGpsData();
 
-                            String s = mpdit.mLastExceptionMessage + " packet: " + mpdit.mLastPacket;
-                            mTextViewLatLng.setText(s);
+                            //mTextViewLatLng.setText(String.format("%d %d -- %d %d : ",mpdit.getUbiquityNodes().size(),mpdit.getGotennaNodes().size(),mSelectedTable, mSelctedID ) + mSelectedProprtyID);
+
+                            //String s = mpdit.mLastExceptionMessage + " packet: " + mpdit.mLastPacket;
+                            //mTextViewLatLng.setText(s);
 
                         } else {
                             mTextViewLatLng.setText("mpdit=null");
@@ -167,7 +200,7 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
                     mTextViewLatLng.setText(e.getMessage());
                 }
             }
-            timerHandler.postDelayed(this,500);
+            timerHandler.postDelayed(this,2500);
         }
     };
 
@@ -245,7 +278,7 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
         //CreateMapBox();
 
         startTime = System.currentTimeMillis();
-        timerHandler.postDelayed(timerRunnable,500);
+        timerHandler.postDelayed(timerRunnable,1500);
         mTextViewLatLng = getActivity().findViewById(R.id.map_box_lat_lng);
 
     }
@@ -355,8 +388,61 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
             case R.id.buttonMapBoxShowAll:
                 //Toast.makeText(mActivity, "Pokaż wszystko", Toast.LENGTH_SHORT).show();
                 {
-                    LatLng locationOne = new LatLng(36.532128, -93.489121);
-                    LatLng locationTwo = new LatLng(25.837058, -106.646234);
+                    Location l = mapboxMap.getLocationComponent().getLastKnownLocation();
+                    double minLat = l.getLatitude() - 0.001;
+                    double maxLat = l.getLatitude() + 0.001;
+                    double minLng = l.getLongitude() - 0.001;
+                    double maxLng = l.getLongitude() + 0.001;
+                    VectorApp app = VectorApp.getInstance();
+                    if (app != null) {
+                        MpditManager mpdit = app.getMpditManger();
+                        if (mpdit != null) {
+                            // petla po ubiquity
+                            {
+                                Vector<MeshNode> nodes = mpdit.getUbiquityNodes();
+                                for(int i=0; i<nodes.size(); i++)
+                                {
+                                    MeshNode n = nodes.get(i);
+                                    if(n.lat > maxLat)      maxLat = n.lat;
+                                    if(n.lat < minLat)      minLat = n.lat;
+                                    if(n.lng > maxLng)      maxLng = n.lng;
+                                    if(n.lng < minLng)      minLng = n.lng;
+                                }
+                            }
+                            // petla po gotenna
+                            {
+                                Vector<MeshNode> nodes = mpdit.getGotennaNodes();
+                                for(int i=0; i<nodes.size(); i++)
+                                {
+                                    MeshNode n = nodes.get(i);
+                                    if(n.lat > maxLat)      maxLat = n.lat;
+                                    if(n.lat < minLat)      minLat = n.lat;
+                                    if(n.lng > maxLng)      maxLng = n.lng;
+                                    if(n.lng < minLng)      minLng = n.lng;
+                                }
+                            }
+                            // petla po mpdit
+                            {
+                                Vector<MeshNode> nodes = mpdit.getMpditNodes();
+                                for(int i=0; i<nodes.size(); i++)
+                                {
+                                    MeshNode n = nodes.get(i);
+                                    if(n.lat > maxLat)      maxLat = n.lat;
+                                    if(n.lat < minLat)      minLat = n.lat;
+                                    if(n.lng > maxLng)      maxLng = n.lng;
+                                    if(n.lng < minLng)      minLng = n.lng;
+                                }
+                            }
+                        }
+                    }
+                    /*
+                    for (int x = 0; x < featureCollection.features().size(); x++) {
+                        Feature f = featureCollection.features().get(x);
+
+                    }*/
+
+                    LatLng locationOne = new LatLng(minLat, minLng);
+                    LatLng locationTwo = new LatLng(maxLat, maxLng);
 
                     LatLngBounds latLngBounds = new LatLngBounds.Builder()
                             .include(locationOne) // Northeast
@@ -448,11 +534,14 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
 
                 initFeatureCollection();
 
-                style.addSource(new GeoJsonSource(SOURCE_ID, featureCollection));
+                //style.addSource(new GeoJsonSource(SOURCE_ID, featureCollection));
+                style.addSource(new GeoJsonSource(SOURCE_GOTENNA_ID, gotennaCollection));
+                style.addSource(new GeoJsonSource(SOURCE_UBIQUITY_ID, ubiquityCollection));
+                style.addSource(new GeoJsonSource(SOURCE_MPDIT_ID, mpditCollection));
 
 // Add the CircleLayer and set the filter so that circle are only shown
 // if the PROPERTY_SELECTED boolean property is false.
-                CircleLayer circleLayer = new CircleLayer(CIRCLE_LAYER_ID, SOURCE_ID)
+                /*CircleLayer circleLayer = new CircleLayer(CIRCLE_LAYER_ID, SOURCE_ID)
                         .withProperties(
                                 circleRadius(interpolate(linear(), zoom(),
                                         stop(2, 5f),
@@ -460,21 +549,53 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
                                 )),
                                 circleColor(parseColor("#2196F3")));
                 circleLayer.setFilter(eq(get(PROPERTY_SELECTED), literal(false)));
-                style.addLayer(circleLayer);
+                style.addLayer(circleLayer);*/
 
 // Add the marker icon image to the map
-                style.addImage(MARKER_ICON_ID, BitmapFactory.decodeResource(
-                        MpditMapFragment.this.getResources(), R.drawable.blue_marker_view));
+                //style.addImage(MARKER_ICON_ID, BitmapFactory.decodeResource(
+                //        MpditMapFragment.this.getResources(), R.drawable.blue_marker_view));
+
+                style.addImage(UBIQUITY_ICON_ID, BitmapFactory.decodeResource(
+                        MpditMapFragment.this.getResources(), R.drawable.marker_ubiquity));
+
+                style.addImage(GOTENNA_ICON_ID, BitmapFactory.decodeResource(
+                        MpditMapFragment.this.getResources(), R.drawable.marker_gotenna));
+
+                style.addImage(MPDIT_ICON_ID, BitmapFactory.decodeResource(
+                        MpditMapFragment.this.getResources(), R.drawable.marker_mpdit));
 
 // Add the SymbolLayer and set the filter so that circle are only shown
 // if the PROPERTY_SELECTED boolean property is true.
-                SymbolLayer symbolLayer = new SymbolLayer(MARKER_LAYER_ID, SOURCE_ID)
-                        .withProperties(iconImage(MARKER_ICON_ID),
+                SymbolLayer symbolLayerUbiquity = new SymbolLayer(LAYER_ID_UBIQUITY, SOURCE_UBIQUITY_ID)
+                        .withProperties(iconImage(UBIQUITY_ICON_ID),
                                 iconAllowOverlap(true),
                                 iconOffset(new Float[] {0f, -13f})
                         );
-                symbolLayer.setFilter(eq(get(PROPERTY_SELECTED), literal(true)));
-                style.addLayer(symbolLayer);
+                symbolLayerUbiquity.setFilter(eq(get(PROPERTY_VISIBLE), literal(true)));
+                style.addLayer(symbolLayerUbiquity);
+
+// Add the SymbolLayer and set the filter so that circle are only shown
+// if the PROPERTY_SELECTED boolean property is true.
+                SymbolLayer symbolLayerGotenna = new SymbolLayer(LAYER_ID_GOTENNA, SOURCE_GOTENNA_ID)
+                        .withProperties(iconImage(GOTENNA_ICON_ID),
+                                iconAllowOverlap(true),
+                                iconOffset(new Float[] {0f, -13f})
+                        );
+                symbolLayerGotenna.setFilter(eq(get(PROPERTY_VISIBLE), literal(true)));
+                style.addLayer(symbolLayerGotenna);
+
+
+// Add the SymbolLayer and set the filter so that circle are only shown
+// if the PROPERTY_SELECTED boolean property is true.
+                SymbolLayer symbolLayerMpdit = new SymbolLayer(LAYER_ID_MPDIT, SOURCE_MPDIT_ID)
+                        .withProperties(iconImage(MPDIT_ICON_ID),
+                                iconAllowOverlap(true),
+                                iconOffset(new Float[] {0f, -13f})
+                        );
+                symbolLayerMpdit.setFilter(eq(get(PROPERTY_VISIBLE), literal(true)));
+                style.addLayer(symbolLayerMpdit);
+
+
 
                 mapboxMap.addOnMapClickListener(MpditMapFragment.this);
 
@@ -492,8 +613,59 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
      * {@link SymbolLayer}.
      */
     private void initFeatureCollection() {
-        List<Feature> markerCoordinates = new ArrayList<>();
+        List<Feature> markerCoordinatesUbiquity = new ArrayList<>();
+        List<Feature> markerCoordinatesGotenna = new ArrayList<>();
+        List<Feature> markerCoordinatesMpdit = new ArrayList<>();
 
+        VectorApp app = VectorApp.getInstance();
+        if (app != null) {
+            MpditManager mpdit = app.getMpditManger();
+            if (mpdit != null) {
+                // petla po ubiquity
+                {
+                    Vector<MeshNode> nodes = mpdit.getUbiquityNodes();
+                    for(int i=0; i<nodes.size(); i++) {
+                        MeshNode n = nodes.get(i);
+                        Feature featureOne = Feature.fromGeometry(
+                                Point.fromLngLat(n.lng, n.lat));
+                        featureOne.addStringProperty(PROPERTY_ID, Integer.toString(i));
+                        featureOne.addBooleanProperty(PROPERTY_SELECTED, false);
+                        featureOne.addBooleanProperty(PROPERTY_VISIBLE, true);
+                        markerCoordinatesUbiquity.add(featureOne);
+                    }
+                }
+
+                // petla po gotenna
+                {
+                    Vector<MeshNode> nodes = mpdit.getGotennaNodes();
+                    for(int i=0; i<nodes.size(); i++) {
+                        MeshNode n = nodes.get(i);
+                        Feature featureOne = Feature.fromGeometry(
+                                Point.fromLngLat(n.lng, n.lat));
+                        featureOne.addStringProperty(PROPERTY_ID, Integer.toString(i));
+                        featureOne.addBooleanProperty(PROPERTY_SELECTED, false);
+                        featureOne.addBooleanProperty(PROPERTY_VISIBLE, true);
+                        markerCoordinatesGotenna.add(featureOne);
+                    }
+                }
+
+                // petla po mpdit
+                {
+                    Vector<MeshNode> nodes = mpdit.getMpditNodes();
+                    for(int i=0; i<nodes.size(); i++) {
+                        MeshNode n = nodes.get(i);
+                        Feature featureOne = Feature.fromGeometry(
+                                Point.fromLngLat(n.lng, n.lat));
+                        featureOne.addStringProperty(PROPERTY_ID, Integer.toString(i));
+                        featureOne.addBooleanProperty(PROPERTY_SELECTED, false);
+                        featureOne.addBooleanProperty(PROPERTY_VISIBLE, true);
+                        markerCoordinatesMpdit.add(featureOne);
+                    }
+                }
+            }
+        }
+
+        /*
         Feature featureOne = Feature.fromGeometry(
                 Point.fromLngLat(45.37353515625, -14.32825967774));
         featureOne.addStringProperty(PROPERTY_ID, "1");
@@ -511,14 +683,76 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
         featureThree.addStringProperty(PROPERTY_ID, "3");
         featureThree.addBooleanProperty(PROPERTY_SELECTED, false);
         markerCoordinates.add(featureThree);
+        */
 
-        featureCollection = FeatureCollection.fromFeatures(markerCoordinates);
+
+        ubiquityCollection = FeatureCollection.fromFeatures(markerCoordinatesUbiquity);
+        gotennaCollection = FeatureCollection.fromFeatures(markerCoordinatesGotenna);
+        mpditCollection = FeatureCollection.fromFeatures(markerCoordinatesMpdit);
     }
 
     @Override
     public boolean onMapClick(@NonNull LatLng point) {
         handleClickIcon(mapboxMap.getProjection().toScreenLocation(point));
         return true;
+    }
+
+
+    /*
+    Funkcja wyświetla przyciski umożłiwiajace komunikację z wybranym na mapie użytkownikiem
+     */
+    private void ShowCommunicationButtons()
+    {
+        String text = "-";
+        VectorApp app = VectorApp.getInstance();
+        if (app != null) {
+            MpditManager mpdit = app.getMpditManger();
+            if (mpdit != null) {
+
+                if (UBIQUITY_TABLE == mSelectedTable) {
+                    Vector<MeshNode> nodes = mpdit.getUbiquityNodes();
+                    if (mSelctedID >= 0 && mSelctedID < nodes.size()) {
+                        MeshNode node = nodes.get(mSelctedID);
+                        text = String.format("Ubiquity: ") + node.name;
+                    }
+                }
+
+                if (GOTENNA_TABLE == mSelectedTable) {
+                    Vector<MeshNode> nodes = mpdit.getGotennaNodes();
+                        if (mSelctedID >= 0 && mSelctedID < nodes.size()) {
+                            MeshNode node = nodes.get(mSelctedID);
+                            text = String.format("GoTenna: ") + node.name;
+                        }
+                }
+
+                if (MPDIT_TABLE == mSelectedTable) {
+                    Vector<MeshNode> nodes = mpdit.getMpditNodes();
+                        if (mSelctedID >= 0 && mSelctedID < nodes.size()) {
+                            MeshNode node = nodes.get(mSelctedID);
+                            text = String.format("Mpdit: ") + node.name;
+                        }
+                    }
+
+
+            }
+        }
+
+        if(mTextViewLatLng != null)
+        {
+            mTextViewLatLng.setText(text);
+        }
+    }
+
+
+    /*
+    Funkcja ukrywa przyciski umożliwiajace komunikację z wybranym na mapie użytkownikiem
+     */
+    private void HideCommunicationButtons()
+    {
+        if(mTextViewLatLng != null)
+        {
+            mTextViewLatLng.setText(" - ");
+        }
     }
 
     /**
@@ -530,45 +764,71 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
      * @param screenPoint the point on screen clicked
      */
     private boolean handleClickIcon(PointF screenPoint) {
-        List<Feature> selectedCircleFeatureList = mapboxMap.queryRenderedFeatures(screenPoint, CIRCLE_LAYER_ID);
-        List<Feature> selectedMarkerFeatureList = mapboxMap.queryRenderedFeatures(screenPoint, MARKER_LAYER_ID);
 
-        if (!selectedCircleFeatureList.isEmpty()) {
-            Feature selectedCircleFeature = selectedCircleFeatureList.get(0);
+        boolean somethingIsSelected = false;
 
-            for (int x = 0; x < featureCollection.features().size(); x++) {
-
-                if (selectedCircleFeature.getStringProperty(PROPERTY_ID)
-                        .equals(featureCollection.features().get(x).getStringProperty(PROPERTY_ID))) {
-
-                    if (featureSelectStatusIsTrue(selectedCircleFeature)) {
-                        setFeatureSelectState(x, featureCollection.features().get(x), true);
-                    } else {
-                        setSelected(x);
-                    }
-                }
-            }
-        } else if (!selectedMarkerFeatureList.isEmpty()) {
-            Feature selectedMarkerFeature = selectedMarkerFeatureList.get(0);
-
-            for (int x = 0; x < featureCollection.features().size(); x++) {
-
-                if (selectedMarkerFeature.getStringProperty(PROPERTY_ID)
-                        .equals(featureCollection.features().get(x).getStringProperty(PROPERTY_ID))) {
-
-                    if (featureSelectStatusIsTrue(selectedMarkerFeature)) {
-                        setFeatureSelectState(x, featureCollection.features().get(x), false);
-                    } else {
-                        setSelected(x);
-                    }
-                }
-            }
-        } else {
-// Reset all features to unselected so that all circles are shown and no icons are shown
-            for (int x = 0; x < featureCollection.features().size(); x++) {
-                setFeatureSelectState(x, featureCollection.features().get(x), false);
-            }
+        List<Feature> ubiquityList = mapboxMap.queryRenderedFeatures(screenPoint, LAYER_ID_UBIQUITY);
+        if (!ubiquityList.isEmpty()) {
+            Feature selectedFeature = ubiquityList.get(0);
+            String s = selectedFeature.getStringProperty(PROPERTY_ID);
+            mSelectedProprtyID = s;
+            try {
+                mSelctedID = Integer.parseInt(s);
+            } catch (Exception e) {}
+            mSelectedTable = UBIQUITY_TABLE;
+            ShowCommunicationButtons();
+            return true;
         }
+
+        List<Feature> gotennaList = mapboxMap.queryRenderedFeatures(screenPoint, LAYER_ID_GOTENNA);
+        if (!gotennaList.isEmpty()) {
+            Feature selectedFeature = gotennaList.get(0);
+            String s = selectedFeature.getStringProperty(PROPERTY_ID);
+            mSelectedProprtyID = s;
+            try {
+                mSelctedID = Integer.parseInt(s);
+            } catch (Exception e) {}
+            mSelectedTable = GOTENNA_TABLE;
+            ShowCommunicationButtons();
+            return true;
+        }
+
+        List<Feature> mpditList = mapboxMap.queryRenderedFeatures(screenPoint, LAYER_ID_MPDIT);
+        if (!mpditList.isEmpty()) {
+            Feature selectedFeature = mpditList.get(0);
+            String s = selectedFeature.getStringProperty(PROPERTY_ID);
+            mSelectedProprtyID = s;
+            try {
+                mSelctedID = Integer.parseInt(s);
+            } catch (Exception e) {}
+            mSelectedTable = MPDIT_TABLE;
+            ShowCommunicationButtons();
+            return true;
+        }
+
+
+        if(!somethingIsSelected)
+        {
+            mSelectedProprtyID = "-1";
+            mSelectedTable = -1;
+            HideCommunicationButtons();
+
+// Reset all features to unselected so that all circles are shown and no icons are shown
+
+            /*for (int x = 0; x < ubiquityCollection.features().size(); x++) {
+                setFeatureSelectState(x, ubiquityCollection.features().get(x), false);
+            }
+
+            for (int x = 0; x < gotennaCollection.features().size(); x++) {
+                setFeatureSelectState(x, gotennaCollection.features().get(x), false);
+            }
+
+            for (int x = 0; x < mpditCollection.features().size(); x++) {
+                setFeatureSelectState(x, mpditCollection.features().get(x), false);
+            }*/
+        }
+
+
         return true;
     }
 
@@ -592,9 +852,24 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
         mapboxMap.getStyle(new Style.OnStyleLoaded() {
             @Override
             public void onStyleLoaded(@NonNull Style style) {
-                GeoJsonSource geoJsonSource = style.getSourceAs(SOURCE_ID);
+                /*GeoJsonSource geoJsonSource = style.getSourceAs(SOURCE_ID);
                 if (geoJsonSource != null && featureCollection != null) {
                     geoJsonSource.setGeoJson(featureCollection);
+                }*/
+
+                GeoJsonSource geoJsonSourceUbiquity = style.getSourceAs(SOURCE_UBIQUITY_ID);
+                if (geoJsonSourceUbiquity != null && ubiquityCollection != null) {
+                    geoJsonSourceUbiquity.setGeoJson(ubiquityCollection);
+                }
+
+                GeoJsonSource geoJsonSourceGotenna = style.getSourceAs(SOURCE_GOTENNA_ID);
+                if (geoJsonSourceGotenna != null && gotennaCollection != null) {
+                    geoJsonSourceGotenna.setGeoJson(gotennaCollection);
+                }
+
+                GeoJsonSource geoJsonSourceMpdit = style.getSourceAs(SOURCE_MPDIT_ID);
+                if (geoJsonSourceMpdit != null && mpditCollection != null) {
+                    geoJsonSourceMpdit.setGeoJson(mpditCollection);
                 }
             }
         });

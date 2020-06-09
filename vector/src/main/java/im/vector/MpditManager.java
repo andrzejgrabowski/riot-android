@@ -49,6 +49,7 @@ public class MpditManager implements LocationListener, Runnable {
     private Vector<String> mListeners = new Vector<String>();
     private Vector<MeshNode> mNodesUbiquity = new Vector<MeshNode>();
     private Vector<MeshNode> mNodesGotenna = new Vector<MeshNode>();
+    private Vector<MeshNode> mNodesMpdit = new Vector<MeshNode>();
 
     // co mBroadcastDelay sekund wysyłane są dane do wszystkich użytkowników sieci
     int mBroadcastDelay = 30;
@@ -90,6 +91,22 @@ public class MpditManager implements LocationListener, Runnable {
     public void sendGpsData() {
         sendUdp = true;
     }
+
+    public Vector<MeshNode> getUbiquityNodes()
+    {
+        return mNodesUbiquity;
+    }
+
+    public Vector<MeshNode> getGotennaNodes()
+    {
+        return mNodesGotenna;
+    }
+
+    public Vector<MeshNode> getMpditNodes()
+    {
+        return mNodesMpdit;
+    }
+
 
 
     public void sendBroadcast(DatagramSocket SocketSend)
