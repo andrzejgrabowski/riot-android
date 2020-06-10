@@ -234,6 +234,8 @@ public class MpditManager implements LocationListener, Runnable {
                     mNodesUbiquity.get(i).data = data;
                     mNodesUbiquity.get(i).lat = Double.valueOf(s[1]);
                     mNodesUbiquity.get(i).lng = Double.valueOf(s[2]);
+                    mNodesUbiquity.get(i).ID = s[3];
+                    mNodesUbiquity.get(i).name = s[4];
                 }
             }
 
@@ -264,6 +266,8 @@ public class MpditManager implements LocationListener, Runnable {
                     mNodesGotenna.get(i).data = data;
                     mNodesGotenna.get(i).lat = Double.valueOf(s[1]);
                     mNodesGotenna.get(i).lng = Double.valueOf(s[2]);
+                    //mNodesUbiquity.get(i).ID = s[3];
+                    mNodesUbiquity.get(i).name = s[4];
                 }
             }
 

@@ -121,6 +121,7 @@ import butterknife.BindView;
 import butterknife.OnClick;
 import im.vector.BuildConfig;
 import im.vector.Matrix;
+import im.vector.MpditManager;
 import im.vector.MyPresenceManager;
 import im.vector.PublicRoomsManager;
 import im.vector.R;
@@ -341,6 +342,23 @@ public class VectorHomeActivity extends VectorAppCompatActivity implements Searc
         initSlidingMenu();
 
         mSession = Matrix.getInstance(this).getDefaultSession();
+
+
+        VectorApp app = VectorApp.getInstance();
+        if (app != null) {
+            MpditManager mpdit = app.getMpditManger();
+            if (mpdit != null) {
+                mpdit.mDisplayedName = mSession.getMyUser().displayname;
+                mpdit.mID = mSession.getMyUserId();
+            }
+        }
+
+        /*
+            mSession = Matrix.getInstance(this).getDefaultSession();
+            mSession.getMyUserId();
+            mSession.getMyUser().displayname;
+         */
+
         mRoomsViewModel = new HomeRoomsViewModel(mSession);
         // track if the application update
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -1999,6 +2017,8 @@ public class VectorHomeActivity extends VectorAppCompatActivity implements Searc
             String version = getString(R.string.room_sliding_menu_version_x, VectorUtils.getApplicationVersion(this));
             aboutMenuItem.setTitle(version);
         }
+
+
 
         // init the main menu
         TextView displayNameTextView = navigationView.findViewById(R.id.home_menu_main_displayname);

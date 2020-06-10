@@ -42,6 +42,7 @@ import org.matrix.androidsdk.rest.model.group.Group;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import butterknife.BindView;
@@ -52,7 +53,11 @@ import im.vector.VectorApp;
 import im.vector.activity.VectorGroupDetailsActivity;
 import im.vector.adapters.AbsAdapter;
 import im.vector.adapters.GroupAdapter;
+import im.vector.contacts.Contact;
+import im.vector.contacts.ContactsManager;
+import im.vector.contacts.PIDsRetriever;
 import im.vector.ui.themes.ThemeUtils;
+import im.vector.util.HomeRoomsViewModel;
 import im.vector.util.SystemUtilsKt;
 import im.vector.view.EmptyViewItemDecoration;
 import im.vector.view.SimpleDividerItemDecoration;
@@ -114,6 +119,9 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
     private static final String LOG_TAG = GroupsFragment.class.getSimpleName();
 
 
+    // kontakty
+    private List<Room> mDirectChats = new ArrayList<>();
+
     // MAPBOX-MPDIT
     private static final String LAYER_ID_UBIQUITY = "UBIQUITY_LAYER_ID";
     private static final String LAYER_ID_GOTENNA = "GOTENNA_LAYER_ID";
@@ -154,6 +162,8 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
     FragmentTransaction transaction= null;
     long startTime = 0;
     TextView mTextViewLatLng = null;
+    Button mButtonMapObject = null;
+
 
 
 
@@ -280,7 +290,40 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
         startTime = System.currentTimeMillis();
         timerHandler.postDelayed(timerRunnable,1500);
         mTextViewLatLng = getActivity().findViewById(R.id.map_box_lat_lng);
+        mButtonMapObject = getActivity().findViewById(R.id.buttonMapBoxObject);
 
+        if(mButtonMapObject != null)
+            mButtonMapObject.setVisibility(View.INVISIBLE);
+
+        VectorApp app = VectorApp.getInstance();
+        if (app != null) {
+            MpditManager mpdit = app.getMpditManger();
+            if (mpdit != null) {
+                String s = mpdit.mDisplayedName + " - " + mpdit.mID;
+                mTextViewLatLng.setText(s);
+            }
+        }
+
+        // TWORZYMY KOLEKCJE KONTAKTOW
+        Collection<Contact> contacts = ContactsManager.getInstance().getLocalContactsSnapshot();
+        if (null != contacts) {
+            String c = "Kontakty: ";
+            for (Contact contact : contacts) {
+                c += contact.getDisplayName();
+
+                for (String email : contact.getEmails()) {
+                    Contact.MXID mxid = PIDsRetriever.getInstance().getMXID(email);
+
+                    if (null != mxid) {
+                        String userId = mxid.mMatrixId;
+                        c += userId;
+                    } else {
+                        c += email;
+                    }
+                }
+            }
+            mTextViewLatLng.setText(c);
+        }
     }
 
     @Override
@@ -302,13 +345,29 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
 
     /*
      * *********************************************************************************************
-     * Abstract methods implementation
+     * Listeners
      * *********************************************************************************************
      */
 
     @Override
+    public void onRoomResultUpdated(final HomeRoomsViewModel.Result result) {
+        if (isResumed()) {
+            //mAdapter.setInvitation(mActivity.getRoomInvitations());
+            mDirectChats = result.getDirectChatsWithFavorites();
+            //mAdapter.setRooms(mDirectChats);
+        }
+    }
+
+    /*
+     * *********************************************************************************************
+     * Abstract methods implementation
+     * *********************************************************************************************
+     */
+
+
+    @Override
     protected List<Room> getRooms() {
-        return new ArrayList<>();
+        return new ArrayList<>(mDirectChats);
     }
 
     @Override
@@ -366,6 +425,10 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
 
     public void onClick(final View v) { //check for what button is pressed
         switch (v.getId()) {
+            case R.id.buttonMapBoxObject:
+                // wywolujemy komunikacje z wybranym na mapie użytkownikiem
+                // TO DO !!!
+                break;
             case R.id.buttonMapBoxCenter:
                 //Toast.makeText(mActivity, "Centruj", Toast.LENGTH_SHORT).show();
                 {
@@ -739,7 +802,13 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
 
         if(mTextViewLatLng != null)
         {
-            mTextViewLatLng.setText(text);
+            mTextViewLatLng.setText("-");//text);
+        }
+
+        if(mButtonMapObject != null)
+        {
+            mButtonMapObject.setText(text);
+            mButtonMapObject.setVisibility(View.VISIBLE);
         }
     }
 
@@ -749,9 +818,25 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
      */
     private void HideCommunicationButtons()
     {
+        if(mButtonMapObject != null)
+        {
+            mButtonMapObject.setText("-");
+            mButtonMapObject.setVisibility(View.INVISIBLE);
+        }
+
         if(mTextViewLatLng != null)
         {
             mTextViewLatLng.setText(" - ");
+
+            String c = "kontakty: ";
+            for(int i=0; i < mDirectChats.size(); i++)
+            {
+                c += i + ": ";
+                c += mDirectChats.get(i).getRoomId();
+                //mDirectChats.get(i).getD
+            }
+
+            mTextViewLatLng.setText(c);
         }
     }
 

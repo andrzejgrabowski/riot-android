@@ -15,6 +15,7 @@
  */
 package im.vector.util
 
+import im.vector.VectorApp
 import org.matrix.androidsdk.MXSession
 import org.matrix.androidsdk.core.Log
 import org.matrix.androidsdk.data.Room
@@ -32,6 +33,7 @@ class HomeRoomsViewModel(private val session: MXSession) {
      */
     data class Result(val favourites: List<Room> = emptyList(),
                       val directChats: List<Room> = emptyList(),
+                      val gotenna: List<Room> = emptyList(),
                       val otherRooms: List<Room> = emptyList(),
                       val lowPriorities: List<Room> = emptyList(),
                       val serverNotices: List<Room> = emptyList()) {
@@ -66,6 +68,7 @@ class HomeRoomsViewModel(private val session: MXSession) {
     fun update(): Result {
         val favourites = ArrayList<Room>()
         val directChats = ArrayList<Room>()
+        val gotenna = ArrayList<Room>()
         val otherRooms = ArrayList<Room>()
         val lowPriorities = ArrayList<Room>()
         val serverNotices = ArrayList<Room>()
@@ -82,9 +85,25 @@ class HomeRoomsViewModel(private val session: MXSession) {
             }
         }
 
+        /*
+        // pętla po użytkownikach gotenny:
+        //Room r;
+        val app = VectorApp.getInstance()
+        if (app != null) {
+            val mpdit = app.mpditManger
+            if (mpdit != null)
+                {
+                    val nodes = mpdit.gotennaNodes
+                    for(int i=0; )
+                }
+            }
+            */
+
+
         result = Result(
                 favourites = favourites,
                 directChats = directChats,
+                gotenna = gotenna,
                 otherRooms = otherRooms,
                 lowPriorities = lowPriorities,
                 serverNotices = serverNotices)

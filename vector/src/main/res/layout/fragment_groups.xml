@@ -15,14 +15,14 @@
         android:layout_marginStart="2dp"
         android:layout_marginLeft="2dp"
         android:layout_marginTop="2dp"
-        android:layout_toEndOf="@+id/buttonMapBoxShowAll"
-        android:layout_toRightOf="@+id/buttonMapBoxShowAll"
+        android:layout_toEndOf="@+id/buttonMapBoxObject"
+        android:layout_toRightOf="@+id/buttonMapBoxObject"
         android:textSize="10sp"
         android:text="@string/fragment_in_card_below" />
 
     <Button
         android:id="@+id/buttonMapBoxCenter"
-        android:layout_width="80dp"
+        android:layout_width="70dp"
         android:layout_height="36dp"
         android:layout_alignParentStart="true"
         android:layout_alignParentLeft="true"
@@ -39,6 +39,17 @@
         android:layout_marginLeft="9dp"
         android:layout_toEndOf="@+id/buttonMapBoxCenter"
         android:layout_toRightOf="@+id/buttonMapBoxCenter"
+        android:text="@string/buttonMapBoxShowAll"
+        android:textSize="10sp" />
+
+    <Button
+        android:id="@+id/buttonMapBoxObject"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
+        android:layout_marginStart="9dp"
+        android:layout_marginLeft="9dp"
+        android:layout_toEndOf="@+id/buttonMapBoxShowAll"
+        android:layout_toRightOf="@+id/buttonMapBoxShowAll"
         android:text="@string/buttonMapBoxShowAll"
         android:textSize="10sp" />
 

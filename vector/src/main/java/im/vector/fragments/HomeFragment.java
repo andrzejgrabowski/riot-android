@@ -38,9 +38,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.Vector;
 
 import butterknife.BindView;
+import im.vector.MeshNode;
+import im.vector.MpditManager;
 import im.vector.R;
+import im.vector.VectorApp;
 import im.vector.adapters.HomeRoomAdapter;
 import im.vector.ui.themes.ThemeUtils;
 import im.vector.util.HomeRoomsViewModel;
@@ -62,6 +66,9 @@ public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnS
 
     @BindView(R.id.direct_chats_section)
     HomeSectionView mDirectChatsSection;
+
+    @BindView(R.id.gotenna_section)
+    HomeSectionView mGotennaSection;
 
     @BindView(R.id.server_notices_section)
     HomeSectionView mServerNoticesSection;
@@ -185,6 +192,12 @@ public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnS
         mDirectChatsSection.setupRoomRecyclerView(new LinearLayoutManager(getActivity(), RecyclerView.HORIZONTAL, false),
                 R.layout.adapter_item_circular_room_view, true, this, null, null);
 
+        // GoTenna
+        mGotennaSection.setTitle(R.string.bottom_action_gotenna);
+        mGotennaSection.setPlaceholders(getString(R.string.no_conversation_placeholder), getString(R.string.no_result_placeholder));
+        mGotennaSection.setupRoomRecyclerView(new LinearLayoutManager(getActivity(), RecyclerView.HORIZONTAL, false),
+                R.layout.adapter_item_circular_room_view, true, this, null, null);
+
         // Rooms
         mRoomsSection.setTitle(R.string.bottom_action_rooms);
         mRoomsSection.setPlaceholders(getString(R.string.no_room_placeholder), getString(R.string.no_result_placeholder));
@@ -208,6 +221,7 @@ public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnS
         mHomeSectionViews = Arrays.asList(mInvitationsSection,
                 mFavouritesSection,
                 mDirectChatsSection,
+                mGotennaSection,
                 mRoomsSection,
                 mLowPrioritySection,
                 mServerNoticesSection);
@@ -268,8 +282,26 @@ public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnS
         final boolean pinMissedNotifications = PreferencesManager.pinMissedNotifications(getActivity());
         final boolean pinUnreadMessages = PreferencesManager.pinUnreadMessages(getActivity());
         final Comparator<Room> notificationComparator = RoomUtils.getNotifCountRoomsComparator(mSession, pinMissedNotifications, pinUnreadMessages);
+
+        ArrayList<Room> gotennas = new ArrayList<Room>();
+        VectorApp app = VectorApp.getInstance();
+        if (app != null) {
+            MpditManager mpdit = app.getMpditManger();
+            if (mpdit != null) {
+                Vector<MeshNode> nodes = mpdit.getUbiquityNodes();
+                for(int i=0; i<nodes.size(); i++) {
+                    //Room r = new Room(datHandler,);
+                    //gotennas.add(r);
+                }
+            }
+        }
+
+
         sortAndDisplay(result.getFavourites(), notificationComparator, mFavouritesSection);
         sortAndDisplay(result.getDirectChats(), notificationComparator, mDirectChatsSection);
+        //sortAndDisplay(result.getGotenna(), notificationComparator, mGotennaSection);
+        //sortAndDisplay(gotennas, notificationComparator, mGotennaSection);
+        mGotennaSection.setRooms(gotennas);
         sortAndDisplay(result.getLowPriorities(), notificationComparator, mLowPrioritySection);
         sortAndDisplay(result.getOtherRooms(), notificationComparator, mRoomsSection);
         sortAndDisplay(result.getServerNotices(), notificationComparator, mServerNoticesSection);

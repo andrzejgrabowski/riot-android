@@ -2346,5 +2346,6 @@ Not all features in Riot are implemented in RiotX yet. Main missing (and coming 
     <string name="fragment_in_card_below">Mapa z MapBox</string>
     <string name="buttonMapBoxCenter">Centruj</string>
     <string name="buttonMapBoxShowAll">wszystko</string>
+    <string name="bottom_action_gotenna">goTenna</string>
 
 </resources>

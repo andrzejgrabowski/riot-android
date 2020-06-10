@@ -453,6 +453,14 @@ public class VectorApp extends MultiDexApplication {
         Thread mThreadSocket = new Thread(mMpdit);
         mThreadSocket.start();
 
+        /*
+            mSession = Matrix.getInstance(this).getDefaultSession();
+            //mSession.getMyUserId();
+            //mSession.getMyUser().displayname;
+            mMpdit.mDisplayedName = mSession.getMyUser().displayname;
+            mMpdit.mID = mSession.getMyUserId();
+         */
+
     }
 
     public MpditManager getMpditManger()
