@@ -1890,6 +1890,12 @@ public class VectorHomeActivity extends VectorAppCompatActivity implements Searc
                         break;
                     }
 
+                    case R.id.sliding_menu_settings_mpdit_gotenna: {
+                        //startActivity(GotennaSettingsActivity.getIntent(VectorHomeActivity.this));
+                        startActivity(new Intent(VectorHomeActivity.this, GotennaSettingsActivity.class));
+                        break;
+                    }
+
                     case R.id.sliding_menu_send_bug_report: {
                         BugReporter.sendBugReport();
                         break;

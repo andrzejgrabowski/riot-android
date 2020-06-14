@@ -44,6 +44,11 @@ import im.vector.ui.themes.ThemeUtils;
 
 public class PreferencesManager {
 
+    // goTenna
+    //public static final String GOTENNA_SETTINGS_GID_PREFERENCE_KEY = "GOTENNA_SETTINGS_GID_PREFERENCE_KEY";
+    //public static final String GOTENNA_SETTINGS_MPDIT_GID_PREFERENCE_KEY = "GOTENNA_SETTINGS_MPDIT_GID_PREFERENCE_KEY";
+
+    // riot
     private static final String LOG_TAG = PreferencesManager.class.getSimpleName();
 
     public static final String VERSION_BUILD = "VERSION_BUILD";

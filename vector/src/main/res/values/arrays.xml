@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+   <string-array name="test_entries">
+        <item>Mercury</item>
+        <item>Venus</item>
+        <item>Earth</item>
+        <item>Mars</item>
+    </string-array>
+
+    <string-array name="test_entry_values">
+        <item>Value of Mercury</item>
+        <item>Value of Venus</item>
+        <item>Value of Earth</item>
+        <item>Value of Mars</item>
+    </string-array>
+</resources>
