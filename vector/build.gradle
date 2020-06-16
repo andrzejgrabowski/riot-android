@@ -44,7 +44,7 @@ android {
 
     defaultConfig {
         applicationId "im.vector"
-        minSdkVersion 16
+        minSdkVersion 18
         targetSdkVersion 28
         // use the version code
         versionCode rootProject.ext.versionCodeProp
@@ -287,6 +287,9 @@ dependencies {
 
     // MPABOX
     implementation 'com.mapbox.mapboxsdk:mapbox-android-sdk:9.2.0'
+
+    // GOTENNA
+    implementation project(':gotenna-public-sdk')
 }
 
 //Ensure we never move past okhttp 3.12.x

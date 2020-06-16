@@ -7,6 +7,8 @@ import android.location.LocationManager;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -16,11 +18,62 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.channels.IllegalBlockingModeException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
-;
 
-public class MpditManager implements LocationListener, Runnable {
+
+import com.gotenna.sdk.GoTenna;
+import com.gotenna.sdk.connection.BluetoothAdapterManager;
+import com.gotenna.sdk.connection.BluetoothAdapterManager.BluetoothStatus;
+import com.gotenna.sdk.connection.GTConnectionError;
+import com.gotenna.sdk.connection.GTConnectionManager;
+import com.gotenna.sdk.connection.GTConnectionState;
+import com.gotenna.sdk.data.GTCommand;
+import com.gotenna.sdk.data.GTCommandCenter;
+import com.gotenna.sdk.data.GTDeviceType;
+import com.gotenna.sdk.data.GTError;
+import com.gotenna.sdk.data.GTErrorListener;
+import com.gotenna.sdk.data.GTResponse;
+import com.gotenna.sdk.data.Place;
+import com.gotenna.sdk.data.frequencies.FrequencySlot;
+import com.gotenna.sdk.data.frequencies.FrequencySlot.Bandwidth;
+import com.gotenna.sdk.data.frequencies.GTFrequencyChannel;
+import com.gotenna.sdk.data.user.UserDataStore;
+import com.gotenna.sdk.exceptions.GTInvalidFrequencyChannelException;
+import com.gotenna.sdk.frequency.PowerLevel;
+import com.gotenna.sdk.frequency.SetFrequencySlotInfoInteractor;
+import com.gotenna.sdk.georegion.PlaceFinderTask;
+
+import com.gotenna.sdk.exceptions.GTInvalidAppTokenException;
+import com.gotenna.sdk.responses.SystemInfoResponseData;
+//import com.gotenna.sdk.sample.managers.IncomingMessagesManager;
+
+
+public class MpditManager implements LocationListener, Runnable, GTConnectionManager.GTConnectionListener {
+
+    // goTenna
+    private static final String GOTENNA_APP_TOKEN = "RgIJCQMNEEQVQxlBUAsbHxwBQldHUlgDB0NSAxdRHx4LAwtZRFgLVw4DR1gcXgQE";
+    private UserDataStore userDataStore = null;
+    private BluetoothAdapterManager bluetoothAdapterManager = null;
+    private GTConnectionManager gtConnectionManager = null;
+    private GTCommandCenter gtCommandCenter = null;
+    private SetFrequencySlotInfoInteractor setFrequencySlotInfoInteractor = null;
+    public boolean goTennaNeedInit = true;
+    public boolean goTennaNeedConnect = true;
+    public boolean goTennaHasPreviousConnectionData = false;
+    public GoTennaTechnicalMessageListener goTennaTechnicalMessageListener = null;
+
+    public double[] mGoTennaControlChannel = new double[3];
+    public double[] mGoTennaDataChannel = new double[13];
+    public double mGoTennaPower = 11.8;
+    public double mGoTennaBandwidth = 4;
+    public String mGoTennaUserName = "username";
+    public long mGoTennaGID = 999666;
+    public long mGoTennaMpditGID = 666999;
+
+
 
     public double mLat = 52.20;
     public double mLng = 21.05;
@@ -42,6 +95,11 @@ public class MpditManager implements LocationListener, Runnable {
     public String mLastPacket = "?";
 
     public String mLastExceptionMessage = "?";
+    public String mLastExceptionGoTennaMessage = "?";
+    public String mGoTennaLastMessage = "?";
+    public String mGoTennaStatus = "?";
+    public boolean mGoTennaHasNewMessage = false;
+
     public String mDeviceIP = "127.0.0.1";
 
 
@@ -55,9 +113,221 @@ public class MpditManager implements LocationListener, Runnable {
     int mBroadcastDelay = 30;
 
 
+
     // konstruktor
     public MpditManager(){
 
+
+
+    }
+
+
+    public void goTennaAddMessage(String message)
+    {
+        mGoTennaLastMessage = message;
+        mGoTennaHasNewMessage = true;
+
+        if(goTennaTechnicalMessageListener != null)
+            goTennaTechnicalMessageListener.onNewGotennaTechnicalMessage();
+    }
+
+    public boolean goTennaInit(Context context)
+    {
+        // goTenna
+        try {
+            GoTenna.setApplicationToken(context, GOTENNA_APP_TOKEN);
+            GoTennaIncomingMessagesManager.getInstance().startListening();
+
+            //userDataStore = UserDataStore.getInstance();
+            bluetoothAdapterManager = BluetoothAdapterManager.getInstance();
+            gtConnectionManager = GTConnectionManager.getInstance();
+            gtCommandCenter = GTCommandCenter.getInstance();
+            setFrequencySlotInfoInteractor = new SetFrequencySlotInfoInteractor();
+
+            gtConnectionManager.addGtConnectionListener(this);
+        } catch (Exception e) {
+            mLastExceptionGoTennaMessage = e.getMessage();
+            return false;
+        }
+
+        mLastExceptionGoTennaMessage = "inicjalizacja powiodła się";
+        goTennaNeedInit = false;
+
+        return true;
+    }
+
+
+    private void goTennaSendSetGidCommand(String username, long gid)
+    {
+        // The UserDataStore automatically saves the user's basic info after setGoTennaGID is called
+        gtCommandCenter.setGoTennaGID(gid, username, new GTCommand.GTCommandResponseListener()
+        {
+            @Override
+            public void onResponse(GTResponse response)
+            {
+
+                if (response.getResponseCode() == GTResponse.GTCommandResponseCode.POSITIVE)
+                {
+                    //view.showSetGidSuccessMessage();
+                    goTennaAddMessage("Konfiguracja GID zakończyła się powodzeniem!");
+                }
+                else
+                {
+                    //view.showSetGidFailureMessage();
+                    goTennaAddMessage("Błąd konfiguracji GID");
+                }
+            }
+        }, new GTErrorListener()
+        {
+            @Override
+            public void onError(GTError error)
+            {
+                //if (view != null)
+                {
+                    //view.showSetGidFailureMessage();
+                    goTennaAddMessage("Błąd konfiguracji GID");
+                }
+            }
+        });
+    }
+
+    public boolean goTennaTest()
+    {
+        // Send an echo command to the goTenna to flash the LED light
+        gtCommandCenter.sendEchoCommand(new GTCommand.GTCommandResponseListener()
+        {
+            @Override
+            public void onResponse(GTResponse response)
+            {
+                switch (response.getResponseCode())
+                {
+                    case POSITIVE:
+                        //view.showEchoSuccessMessage();
+                        goTennaAddMessage("Test goTenna zakońcozny pomyślnie!");
+                        break;
+                    case NEGATIVE:
+                        //view.showEchoNackMessage();
+                        goTennaAddMessage("Błąd testu goTenna (NACK)");
+                        break;
+                    case ERROR:
+                        //view.showEchoErrorMessage();
+                        goTennaAddMessage("Błąd testu goTenna");
+                        break;
+                }
+            }
+        }, new GTErrorListener()
+        {
+            @Override
+            public void onError(GTError error)
+            {
+                //view.showEchoErrorMessage();
+                goTennaAddMessage("Błąd testu goTenna");
+            }
+        });
+        return true;
+    }
+
+    public boolean goTennaGetSystemInfo() {
+        GTCommandCenter.getInstance().sendGetSystemInfo(new GTCommandCenter.GTSystemInfoResponseListener()
+        {
+            @Override
+            public void onResponse(SystemInfoResponseData systemInfoResponseData)
+            {
+                // This is where you could retrieve info such at the goTenna's battery level and current firmware version
+                //view.showSystemInfo(systemInfoResponseData);
+                goTennaAddMessage("Status urządzenia odebrany");
+
+                int batteryLevel = systemInfoResponseData.getBatteryLevelAsPercentage();
+                String info = String.format("Stan baterii: %d %%",batteryLevel);
+
+                String antena = systemInfoResponseData.getAntennaQuality().toString();
+                info += "\n Antena: " + antena;
+
+                info += "\n Firmware: " + systemInfoResponseData.getFirmwareVersion().toString();
+
+                info += "\n Nr seryjny: " + systemInfoResponseData.getGoTennaSerialNumber();
+
+                mGoTennaStatus = info;
+
+                if(goTennaTechnicalMessageListener != null)
+                    goTennaTechnicalMessageListener.onNewGotennaStatusMessage();
+
+            }
+        }, new GTErrorListener()
+        {
+            @Override
+            public void onError(GTError error)
+            {
+                //view.showSystemInfoErrorMessage();
+                goTennaAddMessage("Błąd pobierania statusu urządzenia");
+            }
+        });
+
+        return true;
+    }
+
+
+    public boolean goTennaDisconnect() {
+        // There is another method you can use, GTConnectionManager.getInstance().disconnectWithRetry();
+        // That method will disconnect us from the current goTenna and immediately start scanning for another goTenna
+        // Chances are we will re-connect to the goTenna we were just connected to, but it is helpful for clearing up
+        // potential connection issues or performing other business logic.
+        gtConnectionManager.disconnect();
+
+        goTennaNeedConnect = true;
+
+        return true;
+    }
+
+    public boolean goTennaConnectPrevious() {
+
+        goTennaCheckBluetoothStatus();
+
+        return true;
+    }
+
+    public boolean goTennaConnectNew() {
+
+        // Clear old connected Bluetooth MAC address of previous goTenna we were connected to
+        gtConnectionManager.clearConnectedGotennaAddress();
+
+        goTennaCheckBluetoothStatus();
+
+        return true;
+    }
+
+
+
+    private void goTennaCheckBluetoothStatus()
+    {
+        BluetoothStatus bluetoothStatus = bluetoothAdapterManager.getBluetoothStatus();
+
+        switch (bluetoothStatus)
+        {
+            case SUPPORTED_AND_ENABLED:
+                //view.showGotennaDeviceTypeSelectionDialog();
+                try
+                {
+                    gtConnectionManager.scanAndConnect(GTDeviceType.PRO);
+                    //view.showScanningInProgressDialog();
+                    //view.startTimeoutCountdown();
+                    goTennaAddMessage("Rozpoczęcie skanowania w poszukiwaniu urządzenia");
+                }
+                catch (UnsupportedOperationException e)
+                {
+                    //view.showUnsupportedDeviceWarning(e.getLocalizedMessage());
+                    goTennaAddMessage("Błąd skanowania goTenna: " + e.getLocalizedMessage());
+                }
+                break;
+            case SUPPORTED_NOT_ENABLED:
+                //view.requestEnableBluetooth();
+                goTennaAddMessage("Moduł bluetooth nie jest włączony!");
+                break;
+            case NOT_SUPPORTED:
+                //view.showBluetoothNotSupportedMessage();
+                goTennaAddMessage("Brak wsparcia dla komunikacji typu bluetooth");
+                break;
+        }
     }
 
     public void create()
@@ -85,6 +355,9 @@ public class MpditManager implements LocationListener, Runnable {
         }*/
 
         //mListeners.add(mDeviceIP);//"10.3.2.8");//"10.3.2.9");//mDeviceIP);
+
+
+
     }
 
 
@@ -396,5 +669,153 @@ public class MpditManager implements LocationListener, Runnable {
             }
         }
 
+    }
+
+
+    //==============================================================================================
+    // Private Class Instance Methods
+    //==============================================================================================
+
+    private void onGotennaConnected()
+    {
+        FrequencySlot frequencySlot = new FrequencySlot();
+
+        /*
+        public double[] mGoTennaControlChannel = new double[3];
+    public double[] mGoTennaDataChannel = new double[13];
+    public double mGoTennaPower = 11.8;
+    public double mGoTennaBandwidth = 4;
+    public String mGoTennaUserName = "username";
+    public long mGoTennaGID = 999666;
+    public long mGoTennaMpditGID = 666999;
+         */
+
+        frequencySlot.setPowerLevel(PowerLevel.ONE_HALF);
+
+        if(1.0 == mGoTennaPower)    frequencySlot.setPowerLevel(PowerLevel.ONE);
+        if(2.0 == mGoTennaPower)    frequencySlot.setPowerLevel(PowerLevel.TWO);
+        if(4.0 == mGoTennaPower)    frequencySlot.setPowerLevel(PowerLevel.FOUR);
+        if(5.0 == mGoTennaPower)    frequencySlot.setPowerLevel(PowerLevel.FIVE);
+
+        frequencySlot.setBandwidth(Bandwidth._11_80_kHZ);
+        try
+        {
+            // There is a default set of frequencies that a slot get populated with if you do not know what to use
+            List<GTFrequencyChannel> frequencyChannels = new ArrayList<>();
+            frequencyChannels.add(new GTFrequencyChannel(150000000, true));
+            frequencyChannels.add(new GTFrequencyChannel(151000000, false));
+            frequencySlot.setFrequencyChannels(frequencyChannels);
+        }
+        catch (GTInvalidFrequencyChannelException e)
+        {
+            e.printStackTrace();
+            goTennaAddMessage("Nie prawidłowa konfiguracja częstotliwości goTenna");
+        }
+
+        setFrequencySlotInfoInteractor.setFrequencySlotInfoOnGotenna(frequencySlot, new SetFrequencySlotInfoInteractor.SetFrequencySlotInfoListener()
+        {
+            @Override
+            public void onInfoStateChanged(@NonNull SetFrequencySlotInfoInteractor.SetInfoState setInfoState)
+            {
+
+                switch (setInfoState)
+                {
+                    case NON_IDLE_STATE_ERROR:
+                    case NOT_CONNECTED_ERROR:
+                    case SET_POWER_LEVEL_ERROR:
+                    case SET_BANDWIDTH_BITRATE_ERROR:
+                    case SET_FREQUENCIES_ERROR:
+                        //view.showErrorSettingFrequenciesWarning();
+                        goTennaAddMessage("Błąd konfiguracji częstotliwości");
+                        break;
+                    case SET_ALL_SUCCESS:
+                        //view.showSdkOptionsScreen();
+                        goTennaAddMessage("Konfiguracja częstotliwości zakończyła się powodzeniem");
+                        break;
+                }
+            }
+        });
+
+
+        String username = "user";
+        long gid = 999;
+        goTennaSendSetGidCommand(username, gid);
+
+        goTennaNeedConnect = false;
+
+        if(goTennaTechnicalMessageListener != null)
+            goTennaTechnicalMessageListener.onGotennaTechnicalMessageConnected();
+
+        /*view.stopTimeoutCountdown();
+        view.dismissScanningProgressDialog();
+
+        GTDeviceType deviceType = GTConnectionManager.getInstance().getDeviceType();
+
+        switch (deviceType)
+        {
+            case V1:
+                view.showSdkOptionsScreen();
+                break;
+            case MESH:
+                findAndSetMeshLocation();
+                break;
+            case PRO:
+                setProFrequencies();
+                break;
+        }
+
+         */
+    }
+
+    //==============================================================================================
+    // GTConnectionListener Implementation
+    //==============================================================================================
+
+    // goTenna
+    @Override
+    public void onConnectionStateUpdated(@NonNull GTConnectionState gtConnectionState) {
+        switch (gtConnectionState)
+        {
+            case CONNECTED:
+                onGotennaConnected();
+                break;
+        }
+    }
+
+    // goTenna
+    @Override
+    public void onConnectionError(@NonNull GTConnectionState gtConnectionState, @NonNull GTConnectionError gtConnectionError) {
+        //view.stopTimeoutCountdown();
+        //view.dismissScanningProgressDialog();
+
+        switch (gtConnectionError.getErrorState())
+        {
+            case X_UPGRADE_CHECK_FAILED:
+                /*
+                    This error gets passed when we failed to check if the device is goTenna X. This
+                    could happen due to connectivity issues with the device or error checking if the
+                    device has been remotely upgraded.
+                 */
+                //view.showXCheckError();
+                break;
+            case NOT_X_DEVICE_ERROR:
+                /*
+                    This device is confirmed not to be a goTenna X device. Using error.getDetailString()
+                    you can pull the serial number of the connected device.
+                 */
+                //view.showNotXDeviceWarning(error.getDetailString());
+                break;
+        }
+    }
+
+    //==============================================================================================
+    // Listener Interface
+    //==============================================================================================
+
+    public interface GoTennaTechnicalMessageListener
+    {
+        void onNewGotennaTechnicalMessage();
+        void onGotennaTechnicalMessageConnected();
+        void onNewGotennaStatusMessage();
     }
 }

@@ -5,6 +5,7 @@
     android:installLocation="auto"> <!-- Jitsi libs require min API 21 and min is set to 16 -->
     <uses-sdk tools:overrideLibrary="org.jitsi.meet.sdk,com.oney.WebRTCModule,co.apptailor.googlesignin,com.BV.LinearGradient,com.calendarevents,com.corbt.keepawake,com.dylanvann.fastimage,com.oblador.vectoricons,com.ocetnik.timer,com.rnimmersive,com.zmxv.RNSound,com.i18n.reactnativei18n,org.webkit.androidjsc,com.reactnativecommunity.asyncstorage" />
 
+    <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -32,6 +33,12 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" /> <!-- start the background sync on boot -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" /> <!-- disable the battery optimisation on some devices to let the background sync works -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" /> <!-- videocall feature -->
+
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="true" />
+
+
     <!-- android.permission.CAMERA defines android.hardware.camera -->
     <uses-feature
         android:name="android.hardware.camera"
@@ -54,6 +61,7 @@
         android:required="false"
         tools:replace="required" /> <!-- ShortcutBadger permissions -->
     <!-- for Samsung -->
+
     <uses-permission android:name="com.sec.android.provider.badge.permission.READ" />
     <uses-permission android:name="com.sec.android.provider.badge.permission.WRITE" /> <!-- for htc -->
     <uses-permission android:name="com.htc.launcher.permission.READ_SETTINGS" />
@@ -103,6 +111,7 @@
         android:theme="@style/AppTheme.Light"
         tools:replace="allowBackup,label">
         <activity android:name=".activity.GotennaSettingsActivity"></activity>
+        <activity android:name=".activity.GotennaConnectionActivity"></activity>
         <!-- No limit for screen ratio: avoid black strips -->
         <meta-data
             android:name="android.max_aspect"

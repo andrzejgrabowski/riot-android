@@ -14,4 +14,16 @@
         <item>Value of Earth</item>
         <item>Value of Mars</item>
     </string-array>
+    <string-array name="gotenna_power">
+        <item>0.5</item>
+        <item>1.0</item>
+        <item>2.0</item>
+        <item>4.0</item>
+        <item>5.0</item>
+    </string-array>
+    <string-array name="gotenna_bandwidth">
+        <item>4.54</item>
+        <item>7.28</item>
+        <item>11.8</item>
+    </string-array>
 </resources>

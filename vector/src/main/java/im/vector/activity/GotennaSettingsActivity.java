@@ -47,6 +47,7 @@ public class GotennaSettingsActivity extends VectorAppCompatActivity {
             fragment = MpditGotennaSettingsFragment.newInstance();
         }
 
+
         if (fragment != null) {
 
             try {
@@ -58,6 +59,8 @@ public class GotennaSettingsActivity extends VectorAppCompatActivity {
                 //Log.e(LOG_TAG, "## updateSelectedFragment() failed : " + e.getMessage(), e);
             }
         }
+
+
     }
 
     @Override

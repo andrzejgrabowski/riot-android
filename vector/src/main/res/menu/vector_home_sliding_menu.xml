@@ -18,6 +18,11 @@
             android:title="@string/room_sliding_menu_settings_mpdit_gotenna" />
 
         <item
+            android:id="@+id/sliding_menu_connection_mpdit_gotenna"
+            android:icon="@drawable/ic_settings"
+            android:title="@string/room_sliding_menu_connection_mpdit_gotenna" />
+
+        <item
             android:id="@+id/sliding_menu_send_bug_report"
             android:icon="@drawable/ic_material_bug_report"
             android:title="@string/send_bug_report" />
