@@ -1,3 +1,7 @@
+//package im.vector.view;
+
+//public class HomeSectionGotennaView { }
+
 /*
  * Copyright 2017 Vector Creations Ltd
  *
@@ -40,6 +44,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import im.vector.R;
 import im.vector.adapters.AbsAdapter;
+import im.vector.adapters.HomeGotennaAdapter;
 import im.vector.adapters.HomeRoomAdapter;
 import im.vector.adapters.model.NotificationCounter;
 import im.vector.fragments.AbsHomeFragment;
@@ -47,8 +52,8 @@ import im.vector.ui.themes.ThemeUtils;
 import im.vector.util.RoomUtils;
 import im.vector.util.ViewUtilKt;
 
-public class HomeSectionView extends RelativeLayout {
-    private static final String LOG_TAG = HomeSectionView.class.getSimpleName();
+public class HomeSectionGotennaView extends HomeSectionView {
+    private static final String LOG_TAG = HomeSectionGotennaView.class.getSimpleName();
 
     @BindView(R.id.section_header)
     TextView mHeader;
@@ -62,30 +67,30 @@ public class HomeSectionView extends RelativeLayout {
     @BindView(R.id.section_placeholder)
     TextView mPlaceHolder;
 
-    private HomeRoomAdapter mAdapter;
+    private HomeGotennaAdapter mAdapter;
 
     private boolean mHideIfEmpty;
     private String mNoItemPlaceholder;
     private String mNoResultPlaceholder;
     private String mCurrentFilter;
 
-    public HomeSectionView(Context context) {
+    public HomeSectionGotennaView(Context context) {
         super(context);
         setup();
     }
 
-    public HomeSectionView(Context context, AttributeSet attrs) {
+    public HomeSectionGotennaView(Context context, AttributeSet attrs) {
         super(context, attrs);
         setup();
     }
 
-    public HomeSectionView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public HomeSectionGotennaView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         setup();
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    public HomeSectionView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    private HomeSectionGotennaView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         setup();
     }
@@ -228,7 +233,7 @@ public class HomeSectionView extends RelativeLayout {
         mRecyclerView.setHasFixedSize(true);
         mRecyclerView.setNestedScrollingEnabled(nestedScrollEnabled);
 
-        mAdapter = new HomeRoomAdapter(getContext(), itemResId, onSelectRoomListener, invitationListener, moreActionListener);
+        mAdapter = new HomeGotennaAdapter(getContext(), itemResId, onSelectRoomListener, invitationListener, moreActionListener);
         mRecyclerView.setAdapter(mAdapter);
         mAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
             @Override
@@ -293,3 +298,4 @@ public class HomeSectionView extends RelativeLayout {
         mRecyclerView.scrollToPosition(index);
     }
 }
+

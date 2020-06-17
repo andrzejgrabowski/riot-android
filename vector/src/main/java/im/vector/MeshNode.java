@@ -17,4 +17,5 @@ public class MeshNode
     public String IP;
     public String ID;
     public String name;
+    public boolean visibleOnMap;
 }

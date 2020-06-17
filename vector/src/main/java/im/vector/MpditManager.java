@@ -477,6 +477,31 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         }
     }
 
+    public void AddUpdateGotennaNode(String id, String name)
+    {
+        for(int i = 0; i<mNodesGotenna.size(); i++)
+        {
+            if(id.compareTo(mNodesGotenna.get(i).ID) == 0) {
+                String newName = String.format("%s",name);
+                mNodesGotenna.get(i).name = newName;
+                return;
+            }
+        }
+
+        {
+            MeshNode node = new MeshNode();
+            node.data = "?";
+            node.lat = 52.20;
+            node.lng = 21.05;
+            node.ID = id;
+            node.name = name;
+            node.IP = "127.0.0.1";
+            node.visibleOnMap = false;
+
+            mNodesGotenna.add(node);
+        }
+    }
+
     public void AddMeshNodeData(String data, String ip)
     {
         String[] s = data.split("\t");
@@ -509,6 +534,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
                     mNodesUbiquity.get(i).lng = Double.valueOf(s[2]);
                     mNodesUbiquity.get(i).ID = s[3];
                     mNodesUbiquity.get(i).name = s[4];
+                    mNodesUbiquity.get(i).visibleOnMap = true;
                 }
             }
 
@@ -521,6 +547,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
                 node.ID = s[3];
                 node.name = s[4];
                 node.IP = ip;
+                node.visibleOnMap = true;
 
                 mNodesUbiquity.add(node);
             }
@@ -539,8 +566,8 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
                     mNodesGotenna.get(i).data = data;
                     mNodesGotenna.get(i).lat = Double.valueOf(s[1]);
                     mNodesGotenna.get(i).lng = Double.valueOf(s[2]);
-                    //mNodesUbiquity.get(i).ID = s[3];
-                    mNodesUbiquity.get(i).name = s[4];
+                    //mNodesGotenna.get(i).ID = s[3];
+                    mNodesGotenna.get(i).name = s[4];
                 }
             }
 
@@ -671,6 +698,12 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
 
     }
 
+
+    public void UpdateConnectedGotennaParameters()
+    {
+        if(goTennaNeedConnect)  return;
+        onGotennaConnected();
+    }
 
     //==============================================================================================
     // Private Class Instance Methods

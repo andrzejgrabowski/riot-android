@@ -50,6 +50,7 @@ import im.vector.ui.themes.ThemeUtils;
 import im.vector.util.HomeRoomsViewModel;
 import im.vector.util.PreferencesManager;
 import im.vector.util.RoomUtils;
+import im.vector.view.HomeSectionGotennaView;
 import im.vector.view.HomeSectionView;
 
 public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnSelectRoomListener {
@@ -68,7 +69,7 @@ public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnS
     HomeSectionView mDirectChatsSection;
 
     @BindView(R.id.gotenna_section)
-    HomeSectionView mGotennaSection;
+    HomeSectionGotennaView mGotennaSection;
 
     @BindView(R.id.server_notices_section)
     HomeSectionView mServerNoticesSection;

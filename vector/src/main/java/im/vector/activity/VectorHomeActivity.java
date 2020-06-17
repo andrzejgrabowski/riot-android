@@ -231,6 +231,9 @@ public class VectorHomeActivity extends VectorAppCompatActivity implements Searc
     @BindView(R.id.button_create_room)
     FloatingActionButton mFabCreateRoom;
 
+    @BindView(R.id.button_add_gotenna_user)
+    FloatingActionButton mFabAddGoTennaUser;
+
     @BindView(R.id.button_join_room)
     FloatingActionButton mFabJoinRoom;
 
@@ -1187,6 +1190,8 @@ public class VectorHomeActivity extends VectorAppCompatActivity implements Searc
             mFabCreateRoom.setColorPressed(fabPressedColor);
             mFabStartChat.setColorNormal(fabColor);
             mFabStartChat.setColorPressed(fabPressedColor);
+            mFabAddGoTennaUser.setColorNormal(fabColor);
+            mFabAddGoTennaUser.setColorPressed(fabPressedColor);
         }
 
         // Set color of toolbar search view
@@ -1259,6 +1264,11 @@ public class VectorHomeActivity extends VectorAppCompatActivity implements Searc
 
         mFabJoinRoom.setIconDrawable(ThemeUtils.INSTANCE.tintDrawableWithColor(
                 ContextCompat.getDrawable(this, R.drawable.riot_tab_rooms),
+                ContextCompat.getColor(this, android.R.color.white)
+        ));
+
+        mFabAddGoTennaUser.setIconDrawable(ThemeUtils.INSTANCE.tintDrawableWithColor(
+                ContextCompat.getDrawable(this, R.drawable.ic_person_black_24dp),
                 ContextCompat.getColor(this, android.R.color.white)
         ));
 
@@ -1554,6 +1564,15 @@ public class VectorHomeActivity extends VectorAppCompatActivity implements Searc
     private void invitePeopleToNewRoom() {
         final Intent settingsIntent = new Intent(VectorHomeActivity.this, VectorRoomCreationActivity.class);
         settingsIntent.putExtra(MXCActionBarActivity.EXTRA_MATRIX_ID, mSession.getMyUserId());
+        startActivity(settingsIntent);
+    }
+
+    /**
+     * Open the dedicated activity
+     */
+    private void addGoTennaUser()
+    {
+        final Intent settingsIntent = new Intent(VectorHomeActivity.this, GoTennaAddUserActivity.class);
         startActivity(settingsIntent);
     }
 
@@ -2425,6 +2444,13 @@ public class VectorHomeActivity extends VectorAppCompatActivity implements Searc
     void fabMenuJoinRoom() {
         mFloatingActionsMenu.collapse();
         joinARoom();
+    }
+
+    @OnClick(R.id.button_add_gotenna_user)
+    void fabMenuAddGoTennaUser() {
+        mFloatingActionsMenu.collapse();
+        //createRoom();
+        addGoTennaUser();
     }
 
     //==============================================================================================================

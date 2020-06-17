@@ -2350,6 +2350,8 @@ Not all features in Riot are implemented in RiotX yet. Main missing (and coming 
     <string name="room_sliding_menu_settings_mpdit_gotenna">goTenna - ustawienia</string>
     <string name="room_sliding_menu_connection_mpdit_gotenna">goTenna - połączenie i test</string>
     <string name="gotenna_connection_title">Połączenie i test</string>
+    <string name="add_gotenna_user">Dodaj użytkownika goTenna</string>
+    <string name="add_gotenna_users">Lista użytkowników posiadajacych urządzenia goTenna:</string>
 
 
 </resources>

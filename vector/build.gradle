@@ -304,5 +304,5 @@ configurations.all {
 
 if (!getGradle().getStartParameter().getTaskRequests().toString().contains("Appfdroid")
         && !getGradle().getStartParameter().getTaskRequests().toString().contains("assembleAndroidTest")) {
-    
+
 }

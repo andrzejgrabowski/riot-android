@@ -302,7 +302,7 @@ public class VectorUtils {
      * @param userId      the member userId.
      * @param displayName the member display name.
      */
-    private static void setDefaultMemberAvatar(final ImageView imageView, final String userId, final String displayName) {
+    public static void setDefaultMemberAvatar(final ImageView imageView, final String userId, final String displayName) {
         // sanity checks
         if (null != imageView && !TextUtils.isEmpty(userId)) {
             final Bitmap bitmap = VectorUtils.getAvatar(imageView.getContext(),

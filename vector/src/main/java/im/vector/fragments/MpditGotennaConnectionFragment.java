@@ -17,8 +17,11 @@ import android.app.Application;
 
 import androidx.preference.PreferenceManager;
 
+import java.util.Objects;
+
 public class MpditGotennaConnectionFragment extends VectorBaseFragment implements View.OnClickListener, MpditManager.GoTennaTechnicalMessageListener {
 
+    final String GOTENNA_HAS_PREVIOUS_CONNECTIONE_KEY = "GOTENNA_HAS_PREVIOUS_CONNECTIONE_KEY";
 
     public MpditManager getMpditManager() {
         VectorApp app = VectorApp.getInstance();
@@ -66,6 +69,12 @@ public class MpditGotennaConnectionFragment extends VectorBaseFragment implement
 
 
         MpditManager mpdit = getMpditManager();
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getContext());
+        // sprawdzamy czy jest ustawiano informacja o wcześniejszym połaćzeniu z gotenną
+        if(mpdit != null)
+        {
+            mpdit.goTennaHasPreviousConnectionData = sp.getBoolean(GOTENNA_HAS_PREVIOUS_CONNECTIONE_KEY, false);
+        }
 
         b = getActivity().findViewById(R.id.goTennaInit);
         if(null != b)
@@ -134,7 +143,21 @@ public class MpditGotennaConnectionFragment extends VectorBaseFragment implement
         }
 
 
+
+        // przepisujemy wartości zapisane z pliku
+        UpdateGoTennaData();
+
+
+    }
+
+    private void UpdateGoTennaData()
+    {
+        MpditManager mpdit = getMpditManager();
+        if(mpdit == null)
+            return;
+
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getContext());
+
         String gid = sp.getString(PreferencesManager.GOTENNA_SETTINGS_GID_PREFERENCE_KEY, "999666");
         String name = sp.getString(PreferencesManager.GOTENNA_SETTINGS_NAME_PREFERENCE_KEY, "999666");
         String gidMpdit = sp.getString(PreferencesManager.GOTENNA_SETTINGS_MPDIT_PREFERENCE_KEY, "999666");
@@ -163,11 +186,34 @@ public class MpditGotennaConnectionFragment extends VectorBaseFragment implement
         String power = sp.getString(PreferencesManager.GOTENNA_SETTINGS_POWER_PREFERENCE_KEY, "4");
         String bandwidth = sp.getString(PreferencesManager.GOTENNA_SETTINGS_BANDWIDTH_PREFERENCE_KEY, "4");
 
-        //Toast.makeText(getActivity(), power + "  " + bandwidth, Toast.LENGTH_SHORT).show();
+        try{
+            mpdit.mGoTennaGID = Long.parseLong(gid);
+            mpdit.mGoTennaUserName = name;
+            mpdit.mGoTennaMpditGID = Long.parseLong(gidMpdit);
 
+            mpdit.mGoTennaControlChannel[0] = Double.parseDouble(control1);
+            mpdit.mGoTennaControlChannel[1] = Double.parseDouble(control2);
+            mpdit.mGoTennaControlChannel[2] = Double.parseDouble(control3);
 
+            mpdit.mGoTennaDataChannel[0] = Double.parseDouble(data1);
+            mpdit.mGoTennaDataChannel[1] = Double.parseDouble(data2);
+            mpdit.mGoTennaDataChannel[2] = Double.parseDouble(data3);
+            mpdit.mGoTennaDataChannel[3] = Double.parseDouble(data4);
+            mpdit.mGoTennaDataChannel[4] = Double.parseDouble(data5);
+            mpdit.mGoTennaDataChannel[5] = Double.parseDouble(data6);
+            mpdit.mGoTennaDataChannel[6] = Double.parseDouble(data7);
+            mpdit.mGoTennaDataChannel[7] = Double.parseDouble(data8);
+            mpdit.mGoTennaDataChannel[8] = Double.parseDouble(data9);
+            mpdit.mGoTennaDataChannel[9] = Double.parseDouble(data10);
+            mpdit.mGoTennaDataChannel[10] = Double.parseDouble(data11);
+            mpdit.mGoTennaDataChannel[11] = Double.parseDouble(data12);
+            mpdit.mGoTennaDataChannel[12] = Double.parseDouble(data13);
 
-
+            mpdit.mGoTennaPower = Double.parseDouble(power);
+            mpdit.mGoTennaBandwidth = Double.parseDouble(bandwidth);
+        } catch (Exception e) {
+            Toast.makeText(getActivity(), "Bład parametrów pracy urządzenia:  " + e.toString(), Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
@@ -201,9 +247,6 @@ public class MpditGotennaConnectionFragment extends VectorBaseFragment implement
 
         switch (v.getId()) {
             case R.id.goTennaInit: {
-                    // TO DO !!!
-
-                    //getApplicationContext()
                     boolean r = mpdit.goTennaInit(getContext());
                     Toast.makeText(getActivity(), mpdit.mLastExceptionGoTennaMessage, Toast.LENGTH_SHORT).show();
                     if(r)
@@ -230,21 +273,17 @@ public class MpditGotennaConnectionFragment extends VectorBaseFragment implement
             case R.id.goTennaConnectLast: {
                 boolean r = mpdit.goTennaConnectPrevious();
             }
-                // TO DO !!!
                 break;
 
             case R.id.goTennaConnectNew: {
 
                 boolean r = mpdit.goTennaConnectNew();
-
                 /*scanProgressDialog = new ProgressDialog(this);
                 scanProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
                 scanProgressDialog.setMessage(getString(R.string.searching_for_gotenna));
                 scanProgressDialog.setCancelable(false);
                 scanProgressDialog.show();*/
-
             }
-                // TO DO !!!
                 break;
 
             case R.id.goTennaDisconnect: {
@@ -275,26 +314,21 @@ public class MpditGotennaConnectionFragment extends VectorBaseFragment implement
                     if(null != b) { b.setVisibility(View.INVISIBLE);}
                 }
             }
-                // TO DO !!!
                 break;
 
             case R.id.goTennaConnectTest: {
                 boolean r = mpdit.goTennaTest();
             }
-                // TO DO !!!
                 break;
 
             case R.id.goTennaInfo: {
                 boolean r = mpdit.goTennaGetSystemInfo();
-
             }
-                // TO DO !!!
                 break;
 
-            case R.id.goTennaUpdate: {
-
-            }
-                // TO DO !!!
+            case R.id.goTennaUpdate:
+                UpdateGoTennaData();
+                mpdit.UpdateConnectedGotennaParameters();
                 break;
         }
     }
@@ -332,6 +366,19 @@ public class MpditGotennaConnectionFragment extends VectorBaseFragment implement
             b = getActivity().findViewById(R.id.goTennaUpdate);
             if(null != b) { b.setVisibility(View.VISIBLE);}
         }
+
+        try {
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(Objects.requireNonNull(getContext()));
+            SharedPreferences.Editor editor = sp.edit();
+            editor.putBoolean(GOTENNA_HAS_PREVIOUS_CONNECTIONE_KEY, true);
+            //editor.commit();
+            editor.apply();
+
+            MpditManager mpdit = getMpditManager();
+            if (mpdit != null) {
+                mpdit.goTennaHasPreviousConnectionData = true;
+            }
+        } catch (Exception e) {}
     }
 
     @Override

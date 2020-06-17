@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/add_gotenna_user"
+        android:layout_marginStart="42dp"
+        android:layout_marginLeft="12dp"
+        android:layout_marginTop="12dp"
+         />
+
+    <TextView
+        android:id="@+id/GID"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="GID: "
+        android:layout_marginStart="12dp"
+        android:layout_marginLeft="12dp"
+        android:layout_marginTop="14dp"
+        android:layout_below="@id/textView2"/>
+
+    <EditText
+        android:id="@+id/editTextGID"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/textView2"
+        android:layout_toRightOf="@id/GID"
+        android:layout_toEndOf="@+id/GID"
+        android:layout_marginStart="12dp"
+        android:layout_marginLeft="12dp"
+        android:ems="10"
+        android:inputType="number" />
+
+    <TextView
+        android:id="@+id/UserName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Nazwa użytkownika: "
+        android:layout_marginStart="12dp"
+        android:layout_marginLeft="12dp"
+        android:layout_marginTop="14dp"
+        android:layout_below="@id/GID"/>
+    <EditText
+        android:id="@+id/editTextGotennaUserName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/GID"
+        android:layout_toRightOf="@id/UserName"
+        android:layout_toEndOf="@+id/UserName"
+        android:layout_marginStart="12dp"
+        android:layout_marginLeft="12dp"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:text="Nazwa" />
+
+    <Button
+        android:id="@+id/buttonGoTennaAddUser"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/UserName"
+        android:layout_marginStart="32dp"
+        android:layout_marginLeft="2dp"
+        android:layout_marginTop="12dp"
+        android:textSize="10dp"
+        android:text="Dodaj użytkownika lub zmień nazwę już dodanego" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/add_gotenna_users"
+        android:background="?attr/vctr_list_divider_color"
+        android:paddingStart="16dp"
+        android:paddingLeft="16dp"
+        android:paddingEnd="16dp"
+        android:paddingRight="16dp"
+        android:layout_marginStart="0dp"
+        android:layout_marginLeft="12dp"
+        android:layout_marginRight="12dp"
+        android:layout_marginTop="12dp"
+        android:layout_below="@id/buttonGoTennaAddUser"        />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/gotenna_users_recycler_view"
+        android:scrollbars="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="12dp"
+        android:layout_below="@id/textView3"/>
+
+
+
+
+
+</RelativeLayout>

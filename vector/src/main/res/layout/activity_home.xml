@@ -150,6 +150,17 @@
                 tools:fab_colorNormal="?attr/colorAccent"
                 tools:fab_colorPressed="?attr/colorAccent" />
 
+            <com.getbase.floatingactionbutton.FloatingActionButton
+                android:id="@+id/button_add_gotenna_user"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:tint="@android:color/white"
+                app:fab_icon="@drawable/ic_person_black_24dp"
+                app:fab_size="mini"
+                app:fab_title="@string/add_gotenna_user"
+                tools:fab_colorNormal="?attr/colorAccent"
+                tools:fab_colorPressed="?attr/colorAccent" />
+
         </com.getbase.floatingactionbutton.FloatingActionsMenu>
 
         <FrameLayout
