@@ -422,6 +422,9 @@ public class VectorApp extends MultiDexApplication {
         mMpdit = new MpditManager();
 
 
+
+
+
         //WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
         //String ip = wm.getConnectionInfo().getIpAddress();//Formatter.formatIpAddress();
         WifiManager wifiMan = (WifiManager) getSystemService(Context.WIFI_SERVICE);
@@ -450,6 +453,21 @@ public class VectorApp extends MultiDexApplication {
 
         //locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 100, 0, mMpdit);
 
+        String MpditGID = PreferencesManager.mpditGID(getApplicationContext());
+        mMpdit.AddFirstMpditNode(MpditGID);
+
+
+        Set<String> setNames = PreferencesManager.gotennaNames(getApplicationContext());
+        Set<String> setGids = PreferencesManager.gotennaGids(getApplicationContext());
+
+/*
+        String[] n = setNames.toArray(new String[100]);
+        String[] g = setGids.toArray(new String[100]);
+        for(int i =0; i<n.length && i<g.length && i<100; i++) {
+            mMpdit.AddUpdateGotennaNode(g[i],n[i]);
+        }
+
+*/
         Thread mThreadSocket = new Thread(mMpdit);
         mThreadSocket.start();
 

@@ -52,7 +52,7 @@ import im.vector.ui.themes.ThemeUtils;
 import im.vector.util.RoomUtils;
 import im.vector.util.ViewUtilKt;
 
-public class HomeSectionGotennaView extends HomeSectionView {
+public class HomeSectionGotennaView extends RelativeLayout {
     private static final String LOG_TAG = HomeSectionGotennaView.class.getSimpleName();
 
     @BindView(R.id.section_header)
@@ -67,12 +67,12 @@ public class HomeSectionGotennaView extends HomeSectionView {
     @BindView(R.id.section_placeholder)
     TextView mPlaceHolder;
 
-    private HomeGotennaAdapter mAdapter;
+    private HomeGotennaAdapter mAdapter = null;
 
     private boolean mHideIfEmpty;
-    private String mNoItemPlaceholder;
-    private String mNoResultPlaceholder;
-    private String mCurrentFilter;
+    private String mNoItemPlaceholder = "?";
+    private String mNoResultPlaceholder = "?";
+    private String mCurrentFilter = "?";
 
     public HomeSectionGotennaView(Context context) {
         super(context);
@@ -114,6 +114,7 @@ public class HomeSectionGotennaView extends HomeSectionView {
         inflate(getContext(), R.layout.home_section_view, this);
         ButterKnife.bind(this);
 
+
         mHeader.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -128,7 +129,13 @@ public class HomeSectionGotennaView extends HomeSectionView {
     /**
      * Update the views to reflect the new number of items
      */
-    private void onDataUpdated() {
+    public void onDataUpdated() {
+
+
+        //boolean notUpdate = true;
+        //if(notUpdate) return;
+
+
         if (null != mAdapter) {
             // reported by GA
             // the adapter value is tested by it seems crashed when calling getBadgeCount
@@ -174,6 +181,8 @@ public class HomeSectionGotennaView extends HomeSectionView {
                 Log.e(LOG_TAG, "## onDataUpdated() failed " + e.getMessage(), e);
             }
         }
+
+
     }
 
     /*
@@ -188,7 +197,8 @@ public class HomeSectionGotennaView extends HomeSectionView {
      * @param title new title
      */
     public void setTitle(@StringRes final int title) {
-        mHeader.setText(title);
+        if(null != mHeader)
+            mHeader.setText(title);
     }
 
     /**
@@ -198,9 +208,16 @@ public class HomeSectionGotennaView extends HomeSectionView {
      * @param noResultPlaceholder placeholder when no results after a filter had been applied
      */
     public void setPlaceholders(final String noItemPlaceholder, final String noResultPlaceholder) {
-        mNoItemPlaceholder = noItemPlaceholder;
-        mNoResultPlaceholder = noResultPlaceholder;
-        mPlaceHolder.setText(TextUtils.isEmpty(mCurrentFilter) ? mNoItemPlaceholder : mNoResultPlaceholder);
+        if(null != mNoItemPlaceholder)
+            mNoItemPlaceholder = noItemPlaceholder;
+        if(null != mNoResultPlaceholder)
+            mNoResultPlaceholder = noResultPlaceholder;
+        if(null != mPlaceHolder) {
+            if(null != mCurrentFilter)
+                mPlaceHolder.setText(TextUtils.isEmpty(mCurrentFilter) ? noItemPlaceholder : noResultPlaceholder);
+            else
+                mPlaceHolder.setText(noItemPlaceholder);
+        }
     }
 
     /**
@@ -219,22 +236,25 @@ public class HomeSectionGotennaView extends HomeSectionView {
      * @param layoutManager        layout manager
      * @param itemResId            cell layout
      * @param nestedScrollEnabled  whether nested scroll should be enabled
-     * @param onSelectRoomListener listener for room click
+     * @param onSelectGotennaListener listener for room click
      * @param invitationListener   listener for invite buttons
      * @param moreActionListener   listener for room menu
      */
     public void setupRoomRecyclerView(final RecyclerView.LayoutManager layoutManager,
                                       @LayoutRes final int itemResId,
                                       final boolean nestedScrollEnabled,
-                                      final HomeRoomAdapter.OnSelectRoomListener onSelectRoomListener,
+                                      final HomeGotennaAdapter.OnSelectGotennaListener onSelectGotennaListener,
                                       final AbsAdapter.RoomInvitationListener invitationListener,
                                       final AbsAdapter.MoreRoomActionListener moreActionListener) {
         mRecyclerView.setLayoutManager(layoutManager);
         mRecyclerView.setHasFixedSize(true);
         mRecyclerView.setNestedScrollingEnabled(nestedScrollEnabled);
 
-        mAdapter = new HomeGotennaAdapter(getContext(), itemResId, onSelectRoomListener, invitationListener, moreActionListener);
+        mAdapter = new HomeGotennaAdapter(getContext(), itemResId);//, onSelectRoomListener, invitationListener, moreActionListener);
+        mAdapter.mListener = onSelectGotennaListener;
         mRecyclerView.setAdapter(mAdapter);
+
+
         mAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
             @Override
             public void onChanged() {
@@ -251,7 +271,7 @@ public class HomeSectionGotennaView extends HomeSectionView {
      * @param listener
      */
     public void onFilter(final String pattern, final AbsHomeFragment.OnFilterListener listener) {
-        mAdapter.getFilter().filter(pattern, new Filter.FilterListener() {
+        /*mAdapter.getFilter().filter(pattern, new Filter.FilterListener() {
             @Override
             public void onFilterComplete(int count) {
                 if (listener != null) {
@@ -261,7 +281,7 @@ public class HomeSectionGotennaView extends HomeSectionView {
                 mRecyclerView.getLayoutManager().scrollToPosition(0);
                 onDataUpdated();
             }
-        });
+        });*/
     }
 
     /**
@@ -271,11 +291,12 @@ public class HomeSectionGotennaView extends HomeSectionView {
      */
     public void setCurrentFilter(final String filter) {
         // reported by GA
+        /*
         if (null != mAdapter) {
             mCurrentFilter = filter;
             mAdapter.onFilterDone(mCurrentFilter);
             mPlaceHolder.setText(TextUtils.isEmpty(mCurrentFilter) ? mNoItemPlaceholder : mNoResultPlaceholder);
-        }
+        }*/
     }
 
     /**
@@ -295,7 +316,8 @@ public class HomeSectionGotennaView extends HomeSectionView {
      * @param index the item index
      */
     public void scrollToPosition(int index) {
-        mRecyclerView.scrollToPosition(index);
+        if(mRecyclerView != null)
+            mRecyclerView.scrollToPosition(index);
     }
 }
 

@@ -1,19 +1,19 @@
-
 package im.vector.activity;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentManager;
 
-import im.vector.Matrix;
+import android.os.Bundle;
+
 import im.vector.MpditManager;
 import im.vector.R;
 import im.vector.VectorApp;
 import im.vector.fragments.MpditGotennaAddUserFragment;
-import im.vector.fragments.MpditGotennaConnectionFragment;
+import im.vector.fragments.MpditGotennaChatFragment;
 
-public class GoTennaAddUserActivity extends VectorAppCompatActivity {
+public class GoTennaChatActivity extends VectorAppCompatActivity {
 
-    static public final String TAG_FRAGMENT_GOTENNA_ADD_USER = "FRAGMENT_GOTENNA_ADD_USER";
+    static public final String TAG_FRAGMENT_GOTENNA_CHAT = "TAG_FRAGMENT_GOTENNA_CHAT";
     private FragmentManager mFragmentManager;
     /*@Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,16 +21,31 @@ public class GoTennaAddUserActivity extends VectorAppCompatActivity {
         setContentView(R.layout.activity_gotenna_settings);
     }*/
 
-
+    public MpditManager getMpditManager() {
+        VectorApp app = VectorApp.getInstance();
+        if (app != null) {
+            MpditManager mpdit = app.getMpditManger();
+            if (mpdit != null) {
+                //mpdit.goTennaTechnicalMessageListener = this;
+                return mpdit;
+            }
+        }
+        return null;
+    }
 
     @Override
     public int getLayoutRes() {
-        return R.layout.activity_go_tenna_add_user;
+        return R.layout.activity_go_tenna_chat_acitivity;
     }
 
     @Override
     public int getTitleRes() {
-        return R.string.add_gotenna_user;
+        return R.string.gotenna_chat;
+        /*        MpditManager mpdit = getMpditManager();
+        if(null != mpdit)
+            return mpdit.mGotennaChatUserName;
+
+        return "rozmowa";*/
     }
 
     @Override
@@ -42,17 +57,17 @@ public class GoTennaAddUserActivity extends VectorAppCompatActivity {
         }
 
         mFragmentManager = getSupportFragmentManager();
-        MpditGotennaAddUserFragment fragment = (MpditGotennaAddUserFragment) mFragmentManager.findFragmentByTag(TAG_FRAGMENT_GOTENNA_ADD_USER);
+        MpditGotennaChatFragment fragment = (MpditGotennaChatFragment) mFragmentManager.findFragmentByTag(TAG_FRAGMENT_GOTENNA_CHAT);
         if (fragment == null) {
-            fragment = MpditGotennaAddUserFragment.newInstance();
+            fragment = MpditGotennaChatFragment.newInstance();
         }
 
         if (fragment != null) {
 
             try {
                 mFragmentManager.beginTransaction()
-                        .replace(R.id.vector_settings_page, fragment, TAG_FRAGMENT_GOTENNA_ADD_USER)
-                        .addToBackStack(TAG_FRAGMENT_GOTENNA_ADD_USER)
+                        .replace(R.id.vector_settings_page, fragment, TAG_FRAGMENT_GOTENNA_CHAT)
+                        .addToBackStack(TAG_FRAGMENT_GOTENNA_CHAT)
                         .commit();
             } catch (Exception e) {
                 //Log.e(LOG_TAG, "## updateSelectedFragment() failed : " + e.getMessage(), e);

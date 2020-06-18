@@ -489,6 +489,7 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
                             {
                                 Vector<MeshNode> nodes = mpdit.getMpditNodes();
                                 for(int i=0; i<nodes.size(); i++)
+                                    if(nodes.get(i).visibleOnMap)
                                 {
                                     MeshNode n = nodes.get(i);
                                     if(n.lat > maxLat)      maxLat = n.lat;
@@ -717,7 +718,8 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
                 // petla po mpdit
                 {
                     Vector<MeshNode> nodes = mpdit.getMpditNodes();
-                    for(int i=0; i<nodes.size(); i++) {
+                    for(int i=0; i<nodes.size(); i++)
+                        if(nodes.get(i).visibleOnMap) {
                         MeshNode n = nodes.get(i);
                         Feature featureOne = Feature.fromGeometry(
                                 Point.fromLngLat(n.lng, n.lat));

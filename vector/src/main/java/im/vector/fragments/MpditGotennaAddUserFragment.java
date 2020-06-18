@@ -23,12 +23,14 @@ import im.vector.util.VectorUtils;
 
 import android.app.Application;
 
+import androidx.collection.ArraySet;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.lang.reflect.Array;
 import java.util.Objects;
+import java.util.Set;
 import java.util.Vector;
 
 
@@ -207,8 +209,24 @@ public class MpditGotennaAddUserFragment extends VectorBaseFragment implements V
                 if(null != edGid && null != edName) {
                     String name = edName.getText().toString();
                     String id = edGid.getText().toString();
-                    if(id.length() > 0 && name.length() > 0)
+                    if(id.length() > 0 && name.length() > 0) {
                         mpdit.AddUpdateGotennaNode(id, name);
+                        // tworzymy zestawy
+                        ArraySet<String> n = new ArraySet<String>();
+                        ArraySet<String> g = new ArraySet<String>();
+                        Vector<MeshNode> nodes = mpdit.getGotennaNodes();
+                        for(int i=0; i<nodes.size(); i++) {
+                            MeshNode node = nodes.get(i);
+                            n.add(node.name);
+                            g.add(node.ID);
+                        }
+                        // zapisujemy do SharedPrefernces
+                        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getContext());
+                        SharedPreferences.Editor e =sp.edit();
+                        e.putStringSet(PreferencesManager.GOTENNA_NAMES,n);
+                        e.putStringSet(PreferencesManager.GOTENNA_GIDS,n);
+                        e.apply();
+                    }
                 }
             }
                 break;

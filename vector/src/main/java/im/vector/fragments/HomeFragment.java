@@ -16,6 +16,7 @@
 
 package im.vector.fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -38,13 +39,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
-import java.util.Vector;
 
 import butterknife.BindView;
-import im.vector.MeshNode;
 import im.vector.MpditManager;
 import im.vector.R;
 import im.vector.VectorApp;
+import im.vector.activity.GoTennaChatActivity;
+import im.vector.adapters.HomeGotennaAdapter;
 import im.vector.adapters.HomeRoomAdapter;
 import im.vector.ui.themes.ThemeUtils;
 import im.vector.util.HomeRoomsViewModel;
@@ -53,7 +54,7 @@ import im.vector.util.RoomUtils;
 import im.vector.view.HomeSectionGotennaView;
 import im.vector.view.HomeSectionView;
 
-public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnSelectRoomListener {
+public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnSelectRoomListener, HomeGotennaAdapter.OnSelectGotennaListener {
     private static final String LOG_TAG = HomeFragment.class.getSimpleName();
 
     @BindView(R.id.nested_scrollview)
@@ -69,7 +70,7 @@ public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnS
     HomeSectionView mDirectChatsSection;
 
     @BindView(R.id.gotenna_section)
-    HomeSectionGotennaView mGotennaSection;
+    HomeSectionGotennaView mGotennaSection;// = null;
 
     @BindView(R.id.server_notices_section)
     HomeSectionView mServerNoticesSection;
@@ -194,10 +195,12 @@ public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnS
                 R.layout.adapter_item_circular_room_view, true, this, null, null);
 
         // GoTenna
-        mGotennaSection.setTitle(R.string.bottom_action_gotenna);
-        mGotennaSection.setPlaceholders(getString(R.string.no_conversation_placeholder), getString(R.string.no_result_placeholder));
-        mGotennaSection.setupRoomRecyclerView(new LinearLayoutManager(getActivity(), RecyclerView.HORIZONTAL, false),
-                R.layout.adapter_item_circular_room_view, true, this, null, null);
+        if(null != mGotennaSection) {
+            mGotennaSection.setTitle(R.string.bottom_action_gotenna);
+            mGotennaSection.setPlaceholders(getString(R.string.no_conversation_placeholder), getString(R.string.no_result_placeholder));
+            mGotennaSection.setupRoomRecyclerView(new LinearLayoutManager(getActivity(), RecyclerView.HORIZONTAL, false),
+                    R.layout.adapter_item_circular_room_view, true, this, null, null);
+        }
 
         // Rooms
         mRoomsSection.setTitle(R.string.bottom_action_rooms);
@@ -222,7 +225,7 @@ public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnS
         mHomeSectionViews = Arrays.asList(mInvitationsSection,
                 mFavouritesSection,
                 mDirectChatsSection,
-                mGotennaSection,
+                //mGotennaSection,
                 mRoomsSection,
                 mLowPrioritySection,
                 mServerNoticesSection);
@@ -285,24 +288,17 @@ public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnS
         final Comparator<Room> notificationComparator = RoomUtils.getNotifCountRoomsComparator(mSession, pinMissedNotifications, pinUnreadMessages);
 
         ArrayList<Room> gotennas = new ArrayList<Room>();
-        VectorApp app = VectorApp.getInstance();
-        if (app != null) {
-            MpditManager mpdit = app.getMpditManger();
-            if (mpdit != null) {
-                Vector<MeshNode> nodes = mpdit.getUbiquityNodes();
-                for(int i=0; i<nodes.size(); i++) {
-                    //Room r = new Room(datHandler,);
-                    //gotennas.add(r);
-                }
-            }
-        }
+
 
 
         sortAndDisplay(result.getFavourites(), notificationComparator, mFavouritesSection);
         sortAndDisplay(result.getDirectChats(), notificationComparator, mDirectChatsSection);
         //sortAndDisplay(result.getGotenna(), notificationComparator, mGotennaSection);
         //sortAndDisplay(gotennas, notificationComparator, mGotennaSection);
-        mGotennaSection.setRooms(gotennas);
+        if(null != mGotennaSection) {
+            mGotennaSection.setRooms(gotennas);
+            mGotennaSection.onDataUpdated();
+        }
         sortAndDisplay(result.getLowPriorities(), notificationComparator, mLowPrioritySection);
         sortAndDisplay(result.getOtherRooms(), notificationComparator, mRoomsSection);
         sortAndDisplay(result.getServerNotices(), notificationComparator, mServerNoticesSection);
@@ -344,5 +340,26 @@ public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnS
         final boolean isFavorite = tags != null && tags.contains(RoomTag.ROOM_TAG_FAVOURITE);
         final boolean isLowPriority = tags != null && tags.contains(RoomTag.ROOM_TAG_LOW_PRIORITY);
         RoomUtils.displayPopupMenu(getActivity(), mSession, room, v, isFavorite, isLowPriority, this);
+    }
+
+    @Override
+    public void onSelectGotenna(String id, String name) {
+
+        VectorApp app = VectorApp.getInstance();
+        if (app != null) {
+            MpditManager mpdit = app.getMpditManger();
+            if (mpdit != null) {
+                mpdit.SetChatUser(id,name);
+            }
+        }
+
+        final Intent settingsIntent = new Intent(mActivity, GoTennaChatActivity.class); //VectorHomeActivity.this
+
+        startActivity(settingsIntent);
+    }
+
+    @Override
+    public void onLongClickGotenna(String id, String name) {
+
     }
 }

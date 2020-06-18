@@ -30,7 +30,9 @@ import org.matrix.androidsdk.data.Room;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
+import im.vector.MeshNode;
 import im.vector.R;
 import im.vector.adapters.model.NotificationCounter;
 import im.vector.util.RoomUtils;
@@ -40,6 +42,7 @@ public class HomeRoomAdapter extends AbsFilterableAdapter<RoomViewHolder> {
     private final List<Room> mRooms;
     private final List<Room> mFilteredRooms;
     private final OnSelectRoomListener mListener;
+
 
     private final AbsAdapter.MoreRoomActionListener mMoreActionListener;
 

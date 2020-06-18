@@ -105,7 +105,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme.Light"
         tools:replace="allowBackup,label">
-        <activity android:name=".activity.GoTennaAddUserActivity"></activity>
+        <activity android:name=".activity.GoTennaChatActivity"></activity>
+        <activity android:name=".activity.GoTennaAddUserActivity" />
         <activity android:name=".activity.GotennaSettingsActivity" />
         <activity android:name=".activity.GotennaConnectionActivity" /> <!-- No limit for screen ratio: avoid black strips -->
         <meta-data

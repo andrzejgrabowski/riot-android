@@ -73,6 +73,9 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
     public long mGoTennaGID = 999666;
     public long mGoTennaMpditGID = 666999;
 
+    public String mGotennaChatUserGID = "?";
+    public String mGotennaChatUserName = "?";
+
 
 
     public double mLat = 52.20;
@@ -556,32 +559,58 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         if(s[5].compareTo("G") == 0)
         {
             // GOTENNA
-            boolean newnode = true;
             String id = s[3];
+            int i = 0;
 
-            for(int i = 0; i<mNodesGotenna.size(); i++)
-            {
-                if(id.compareTo(mNodesGotenna.get(i).ID) == 0) {
-                    newnode = false;
-                    mNodesGotenna.get(i).data = data;
-                    mNodesGotenna.get(i).lat = Double.valueOf(s[1]);
-                    mNodesGotenna.get(i).lng = Double.valueOf(s[2]);
-                    //mNodesGotenna.get(i).ID = s[3];
-                    mNodesGotenna.get(i).name = s[4];
+            // sprawdzamy czy to MPDIT
+            boolean dataFromMpdit = false;
+            for (i = 0; i < mNodesMpdit.size(); i++) {
+                if (id.compareTo(mNodesMpdit.get(i).ID) == 0) {
+                    dataFromMpdit = true;
+                    mNodesMpdit.get(i).data = data;
+                    mNodesMpdit.get(i).lat = Double.valueOf(s[1]);
+                    mNodesMpdit.get(i).lng = Double.valueOf(s[2]);
+                    mNodesMpdit.get(i).name = s[4];
+                    mNodesMpdit.get(i).visibleOnMap = true;
                 }
             }
 
-            if(newnode)
-            {
-                MeshNode node = new MeshNode();
-                node.data = data;
-                node.lat = Double.valueOf(s[1]);
-                node.lng = Double.valueOf(s[2]);
-                node.ID = s[3];
-                node.name = s[4];
-                node.IP = ip;
 
-                mNodesGotenna.add(node);
+            //if(!dataFromMpdit)
+            {
+                boolean newnode = true;
+
+
+                for (i = 0; i < mNodesGotenna.size(); i++) {
+                    if (id.compareTo(mNodesGotenna.get(i).ID) == 0) {
+                        newnode = false;
+                        mNodesGotenna.get(i).data = data;
+                        mNodesGotenna.get(i).lat = Double.valueOf(s[1]);
+                        mNodesGotenna.get(i).lng = Double.valueOf(s[2]);
+                        //mNodesGotenna.get(i).ID = s[3];
+                        mNodesGotenna.get(i).name = s[4];
+                        if(dataFromMpdit)
+                            mNodesGotenna.get(i).visibleOnMap = false;
+                        else
+                            mNodesGotenna.get(i).visibleOnMap = false;
+                    }
+                }
+
+                if (newnode) {
+                    MeshNode node = new MeshNode();
+                    node.data = data;
+                    node.lat = Double.valueOf(s[1]);
+                    node.lng = Double.valueOf(s[2]);
+                    node.ID = s[3];
+                    node.name = s[4];
+                    node.IP = ip;
+                    if(dataFromMpdit)
+                        node.visibleOnMap = false;
+                    else
+                        node.visibleOnMap = true;
+
+                    mNodesGotenna.add(node);
+                }
             }
         }
     }
@@ -839,6 +868,26 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
                 //view.showNotXDeviceWarning(error.getDetailString());
                 break;
         }
+    }
+
+    public void AddFirstMpditNode(String mpditGID) {
+        if(mNodesMpdit.size() > 0)  return;
+        MeshNode node = new MeshNode();
+        node.name = "MPDIT";
+        node.ID = mpditGID;
+        node.lat = 52.20;
+        node.lng = 21.05;
+        node.IP = "127.0.0.1";
+        node.data = "?";
+        node.visibleOnMap = false;
+
+        mNodesMpdit.add(node);
+        mNodesGotenna.add(node);
+    }
+
+    public void SetChatUser(String id, String name) {
+        mGotennaChatUserGID = id;
+        mGotennaChatUserName = name;
     }
 
     //==============================================================================================

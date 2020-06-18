@@ -26,7 +26,9 @@ import android.net.Uri;
 import android.provider.MediaStore;
 import android.text.TextUtils;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.collection.ArraySet;
 import androidx.preference.PreferenceManager;
 
 import org.matrix.androidsdk.core.Log;
@@ -34,7 +36,9 @@ import org.matrix.androidsdk.core.Log;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -70,6 +74,27 @@ public class PreferencesManager {
     public static final String GOTENNA_SETTINGS_DATA_CHANNEL_11_PREFERENCE_KEY = "GOTENNA_SETTINGS_DATA_CHANNEL_11_PREFERENCE_KEY";
     public static final String GOTENNA_SETTINGS_DATA_CHANNEL_12_PREFERENCE_KEY = "GOTENNA_SETTINGS_DATA_CHANNEL_12_PREFERENCE_KEY";
     public static final String GOTENNA_SETTINGS_DATA_CHANNEL_13_PREFERENCE_KEY = "GOTENNA_SETTINGS_DATA_CHANNEL_13_PREFERENCE_KEY";
+
+
+    public static final String GOTENNA_NAMES = "GOTENNA_NAMES";
+    public static final String GOTENNA_GIDS = "GOTENNA_GIDS";
+
+    public static String mpditGID(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getString(GOTENNA_SETTINGS_MPDIT_PREFERENCE_KEY, "0");
+    }
+
+    public static Set<String> gotennaNames(Context context) {
+
+        //ArraySet<String> ss = new ArraySet<String>();
+        Set<String> s = PreferenceManager.getDefaultSharedPreferences(context).getStringSet(GOTENNA_NAMES,new HashSet<String>());
+        return s;
+    }
+
+    public static Set<String> gotennaGids(Context context) {
+        //ArraySet<String> ss = new ArraySet<String>();
+        Set<String> set = PreferenceManager.getDefaultSharedPreferences(context).getStringSet(GOTENNA_GIDS,new HashSet<String>());
+        return set;
+    }
 
 
     // riot

@@ -24,7 +24,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
-        <im.vector.view.HomeSectionView
+        <im.vector.view.HomeSectionGotennaView
             android:id="@+id/gotenna_section"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
