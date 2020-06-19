@@ -1,5 +1,6 @@
 package im.vector.activity;
 
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentManager;
 
@@ -75,6 +76,17 @@ public class GoTennaChatActivity extends VectorAppCompatActivity {
         }
 
 
+    }
+
+    @Override
+    public void afterCreate() {
+        // zmieniamy tytuł
+        MpditManager mpdit = getMpditManager();
+        if(null != mpdit) {
+            ActionBar ab = getSupportActionBar();
+            if(null != ab)
+                ab.setTitle(mpdit.mGotennaChatUserName);
+        }
     }
 
     @Override

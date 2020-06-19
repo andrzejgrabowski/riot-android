@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingBottom="8dp">
+
+    <ImageView
+        android:id="@+id/messageStatusImageView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:src="@drawable/ic_widget_refresh" />
+
+    <LinearLayout
+        android:id="@+id/cellLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@+id/messageStatusImageView"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/cellMessageTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/blue_chat_cell_background"
+            android:minHeight="42dp"
+            android:padding="12dp"
+            android:textColor="#FFFFFF"
+            android:textIsSelectable="true"
+            android:textSize="17sp"
+            tools:text="This is a really long message with a bunch of text here." />
+
+        <TextView
+            android:id="@+id/cellInfoTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="11sp"
+            tools:text="wiadomość" />
+
+    </LinearLayout>
+
+</RelativeLayout>

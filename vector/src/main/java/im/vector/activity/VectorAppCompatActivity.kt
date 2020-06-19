@@ -109,6 +109,8 @@ abstract class VectorAppCompatActivity : BaseMvRxActivity() {
                 setTitle(titleRes)
             }
         }
+
+        afterCreate();
     }
 
     override fun onDestroy() {
@@ -222,6 +224,8 @@ abstract class VectorAppCompatActivity : BaseMvRxActivity() {
     open fun displayInFullscreen() = false
 
     open fun doBeforeSetContentView() = Unit
+
+    open fun afterCreate() = Unit
 
     open fun initUiAndData() = Unit
 

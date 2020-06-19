@@ -383,6 +383,17 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         return mNodesMpdit;
     }
 
+    public Vector<MeshNode.GotennaMessage> getGotennaMessages(String gid)
+    {
+        for(int i = 0 ; i < mNodesGotenna.size(); i++ ) {
+            MeshNode node = mNodesGotenna.get(i);
+            if(gid.compareTo(node.ID) == 0)
+                return node.messages;
+        }
+
+        return null;
+    }
+
 
 
     public void sendBroadcast(DatagramSocket SocketSend)
@@ -888,6 +899,20 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
     public void SetChatUser(String id, String name) {
         mGotennaChatUserGID = id;
         mGotennaChatUserName = name;
+    }
+
+    public void GotennaSendTextMessage(String gid, String messageText)
+    {
+        for(int i = 0 ; i < mNodesGotenna.size(); i++ ) {
+            MeshNode node = mNodesGotenna.get(i);
+            if(gid.compareTo(node.ID) == 0) {
+                MeshNode.GotennaMessage gm = new MeshNode.GotennaMessage();
+                gm.text = messageText;
+                node.messages.add(gm);
+                return;
+            }
+
+        }
     }
 
     //==============================================================================================

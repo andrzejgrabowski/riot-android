@@ -151,7 +151,7 @@ public class HomeGotennaAdapter extends RecyclerView.Adapter<HomeGotennaAdapter.
                     Toast.makeText(mContext, n, Toast.LENGTH_SHORT).show();
 
                     if(null != mListener)
-                        mListener.onSelectGotenna(n,id);
+                        mListener.onSelectGotenna(id,n);
                     //mListener.onSelectRoom(room, viewHolder.getAdapterPosition());
                 }
             });
