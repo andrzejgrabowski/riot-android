@@ -105,11 +105,21 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
             // - replace the contents of the view with that element
 
             TextView m = holder.mView.findViewById(R.id.cellMessageTextView);
+            TextView time = holder.mView.findViewById(R.id.cellInfoTextView);
+            ImageView iv = holder.mView.findViewById(R.id.messageStatusImageView);
             //TextView tvId = holder.mView.findViewById(R.id.gotenna_contact_gid);
             if(position < mDataset.size() && position >= 0) {
-                if(m!=null)    {
+                if(m!=null) {
                     m.setText(mDataset.get(position).text);
                     m.setVisibility(View.VISIBLE);
+                }
+                if(time!=null) {
+                    time.setText(mDataset.get(position).time);
+                    time.setVisibility(View.VISIBLE);
+                }
+                if(iv!=null) {
+
+                    time.setVisibility(View.VISIBLE);
                 }
                 //if(tvId!=null)    tvId.setText(mDataset.get(position).ID);
                 //ImageView iv = holder.mView.findViewById(R.id.adapter_item_gotenna_contact_avatar);

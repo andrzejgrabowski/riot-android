@@ -60,12 +60,14 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Vector;
 
 import im.vector.activity.CommonActivityUtils;
 import im.vector.activity.JitsiCallActivity;
@@ -460,14 +462,35 @@ public class VectorApp extends MultiDexApplication {
         Set<String> setNames = PreferencesManager.gotennaNames(getApplicationContext());
         Set<String> setGids = PreferencesManager.gotennaGids(getApplicationContext());
 
-/*
-        String[] n = setNames.toArray(new String[100]);
-        String[] g = setGids.toArray(new String[100]);
-        for(int i =0; i<n.length && i<g.length && i<100; i++) {
-            mMpdit.AddUpdateGotennaNode(g[i],n[i]);
+        if(setNames != null && setGids != null) {
+            Vector<String> n = new Vector<String>();
+            Vector<String> g = new Vector<String>();
+
+            Iterator<String> ni = setNames.iterator();
+            while(ni.hasNext()) n.add(ni.next());
+
+            Iterator<String> gi = setGids.iterator();
+            while(gi.hasNext()) g.add(gi.next());
+
+            for(int i =0; i<n.size() && i<g.size() && i<100; i++) {
+                mMpdit.AddUpdateGotennaNode(g.get(i),n.get(i));
+            }
+
+            /*String[] n = setNames.toArray(new String[100]);
+            String[] g = setGids.toArray(new String[100]);
+            if(g != null && n != null) {
+                for(int i =0; i<n.length && i<g.length && i<100; i++) {
+                    mMpdit.AddUpdateGotennaNode(g[i],n[i]);
+                }
+                // setGids.iterator();
+            }*/
         }
 
-*/
+
+
+
+
+
         Thread mThreadSocket = new Thread(mMpdit);
         mThreadSocket.start();
 

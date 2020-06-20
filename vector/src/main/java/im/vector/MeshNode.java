@@ -16,6 +16,7 @@ public class MeshNode
     public static class GotennaMessage
     {
         public String text;
+        public String time;
         public boolean fromHost = true;
         public boolean receiptConfiermed = false;
     }

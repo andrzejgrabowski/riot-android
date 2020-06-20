@@ -19,6 +19,8 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.channels.IllegalBlockingModeException;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 
@@ -491,6 +493,19 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         }
     }
 
+    public boolean RemoveGotennaNode(String gid)
+    {
+        for(int i = 0; i<mNodesGotenna.size(); i++)
+        {
+            if(gid.compareTo(mNodesGotenna.get(i).ID) == 0) {
+
+                mNodesGotenna.remove(i);
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void AddUpdateGotennaNode(String id, String name)
     {
         for(int i = 0; i<mNodesGotenna.size(); i++)
@@ -908,6 +923,9 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
             if(gid.compareTo(node.ID) == 0) {
                 MeshNode.GotennaMessage gm = new MeshNode.GotennaMessage();
                 gm.text = messageText;
+                Date currentTime = Calendar.getInstance().getTime();
+
+                gm.time = currentTime.toString();
                 node.messages.add(gm);
                 return;
             }

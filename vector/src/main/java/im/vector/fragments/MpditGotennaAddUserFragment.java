@@ -2,7 +2,7 @@ package im.vector.fragments;
 
 
 
-import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -18,15 +18,21 @@ import im.vector.MeshNode;
 import im.vector.MpditManager;
 import im.vector.R;
 import im.vector.VectorApp;
+import im.vector.activity.VectorHomeActivity;
+import im.vector.adapters.HomeGotennaAdapter;
+import im.vector.util.BugReporter;
 import im.vector.util.PreferencesManager;
 import im.vector.util.VectorUtils;
 
 import android.app.Application;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.collection.ArraySet;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.matrix.androidsdk.core.Log;
 
 import java.lang.reflect.Array;
 import java.util.Objects;
@@ -34,7 +40,7 @@ import java.util.Set;
 import java.util.Vector;
 
 
-public class MpditGotennaAddUserFragment extends VectorBaseFragment implements View.OnClickListener{
+public class MpditGotennaAddUserFragment extends VectorBaseFragment implements View.OnClickListener, HomeGotennaAdapter.OnSelectGotennaListener {
 
     private RecyclerView mRecyclerView = null;
     private RecyclerView.Adapter mAdapter = null;
@@ -44,6 +50,7 @@ public class MpditGotennaAddUserFragment extends VectorBaseFragment implements V
 
     public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
         private Vector<MeshNode> mDataset;
+        public HomeGotennaAdapter.OnSelectGotennaListener mListener = null;
 
         // Provide a reference to the views for each data item
         // Complex data items may need more than one view per item, and
@@ -58,8 +65,9 @@ public class MpditGotennaAddUserFragment extends VectorBaseFragment implements V
         }
 
         // Provide a suitable constructor (depends on the kind of dataset)
-        public MyAdapter(Vector<MeshNode> myDataset) {
-            mDataset = myDataset;
+        public MyAdapter(Vector<MeshNode> dataset, HomeGotennaAdapter.OnSelectGotennaListener listener) {
+            mDataset = dataset;
+            mListener = listener;
         }
 
         // Create new views (invoked by the layout manager)
@@ -93,6 +101,36 @@ public class MpditGotennaAddUserFragment extends VectorBaseFragment implements V
                 ImageView iv = holder.mView.findViewById(R.id.adapter_item_gotenna_contact_avatar);
                 VectorUtils.setDefaultMemberAvatar(iv, mDataset.get(position).ID,mDataset.get(position).name);
             }
+
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    TextView tvName = holder.mView.findViewById(R.id.gotenna_contact_name);
+                    TextView tvId = holder.mView.findViewById(R.id.gotenna_contact_gid);
+                    String n = (String) tvName.getText();
+                    String id = (String) tvId.getText();
+                    //Toast.makeText(mContext, n, Toast.LENGTH_SHORT).show();
+
+                    if(null != mListener)
+                        mListener.onSelectGotenna(id,n);
+                    //mListener.onSelectRoom(room, viewHolder.getAdapterPosition());
+                }
+            });
+            holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    TextView tvName = holder.mView.findViewById(R.id.gotenna_contact_name);
+                    TextView tvId = holder.mView.findViewById(R.id.gotenna_contact_gid);
+                    String n = (String) tvName.getText();
+                    String id = (String) tvId.getText();
+                    //Toast.makeText(mContext, n, Toast.LENGTH_SHORT).show();
+
+                    if(null != mListener)
+                        mListener.onLongClickGotenna(n,id);
+                    //mListener.onLongClickRoom(v, room, viewHolder.getAdapterPosition());
+                    return true;
+                }
+            });
 
         }
 
@@ -165,7 +203,8 @@ public class MpditGotennaAddUserFragment extends VectorBaseFragment implements V
         mRecyclerView.setLayoutManager(mLayoutManager);
 
         // specify an adapter (see also next example)
-        mAdapter = new MyAdapter(mpdit.getGotennaNodes());
+        mAdapter = new MyAdapter(mpdit.getGotennaNodes(),this);
+
 
         mRecyclerView.setAdapter(mAdapter);
 
@@ -194,6 +233,30 @@ public class MpditGotennaAddUserFragment extends VectorBaseFragment implements V
 
     }
 
+    private void UpdateGotennaNamesInSharedPreferences()
+    {
+        MpditManager mpdit = getMpditManager();
+        if (mpdit == null) return;
+
+        // tworzymy zestawy
+        ArraySet<String> n = new ArraySet<String>();
+        ArraySet<String> g = new ArraySet<String>();
+        Vector<MeshNode> nodes = mpdit.getGotennaNodes();
+        for(int i=0; i<nodes.size(); i++) {
+            MeshNode node = nodes.get(i);
+            n.add(node.name);
+            g.add(node.ID);
+        }
+
+
+        // zapisujemy do SharedPrefernces
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getContext());
+        SharedPreferences.Editor e =sp.edit();
+        e.putStringSet(PreferencesManager.GOTENNA_NAMES,n);
+        e.putStringSet(PreferencesManager.GOTENNA_GIDS,g);
+        e.apply();
+    }
+
     @Override
     public void onClick(View v) {
 
@@ -211,21 +274,17 @@ public class MpditGotennaAddUserFragment extends VectorBaseFragment implements V
                     String id = edGid.getText().toString();
                     if(id.length() > 0 && name.length() > 0) {
                         mpdit.AddUpdateGotennaNode(id, name);
-                        // tworzymy zestawy
-                        ArraySet<String> n = new ArraySet<String>();
-                        ArraySet<String> g = new ArraySet<String>();
-                        Vector<MeshNode> nodes = mpdit.getGotennaNodes();
-                        for(int i=0; i<nodes.size(); i++) {
-                            MeshNode node = nodes.get(i);
-                            n.add(node.name);
-                            g.add(node.ID);
-                        }
-                        // zapisujemy do SharedPrefernces
-                        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getContext());
-                        SharedPreferences.Editor e =sp.edit();
-                        e.putStringSet(PreferencesManager.GOTENNA_NAMES,n);
-                        e.putStringSet(PreferencesManager.GOTENNA_GIDS,n);
-                        e.apply();
+                        UpdateGotennaNamesInSharedPreferences();
+
+
+                        edGid.setText("");
+                        edName.setText("");
+
+                        Toast.makeText(getContext(), "Użytkownik dodany", Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(getContext(), n.toString(), Toast.LENGTH_SHORT).show();
+
+                        mAdapter.notifyDataSetChanged();
+                        mRecyclerView.scrollToPosition(mAdapter.getItemCount()-1);
                     }
                 }
             }
@@ -233,4 +292,46 @@ public class MpditGotennaAddUserFragment extends VectorBaseFragment implements V
         }
     }
 
+
+
+    @Override
+    public void onSelectGotenna(String id, String name) {
+        // tworozmy alert box i usuwamy użytkownika
+        // crash reported by a rage shake
+        try {
+            new AlertDialog.Builder(getContext())
+                    .setMessage("Czy napewno chcesz usunąć użytkownika " + name + " GID: " + id)
+                    .setCancelable(false)
+                    .setPositiveButton("Usuń", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            MpditManager mpdit = getMpditManager();
+                            if (mpdit == null) return;
+
+                            if(mpdit.RemoveGotennaNode(id)) {
+                                UpdateGotennaNamesInSharedPreferences();
+                                mAdapter.notifyDataSetChanged();
+                                Toast.makeText(getContext(), "Użytkownik usunięty", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    })
+                    .setNegativeButton("Nie", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            //BugReporter.deleteCrashFile(VectorHomeActivity.this);
+                        }
+                    })
+                    .show();
+        } catch (Exception e) {
+            //Log.e(LOG_TAG, "## onResume() : appCrashedAlert failed " + e.getMessage(), e);
+        }
+    }
+/*
+
+   */
+
+    @Override
+    public void onLongClickGotenna(String id, String name) {
+
+    }
 }
