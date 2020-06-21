@@ -20,7 +20,7 @@
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
             android:layout_margin="4dp"
-            android:text="dodatkowe informacje"/>
+            android:text="limit znaków: 200"/>
     </RelativeLayout>
 
     <View

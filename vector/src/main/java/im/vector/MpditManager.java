@@ -57,6 +57,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
 
     // goTenna
     private static final String GOTENNA_APP_TOKEN = "RgIJCQMNEEQVQxlBUAsbHxwBQldHUlgDB0NSAxdRHx4LAwtZRFgLVw4DR1gcXgQE";
+    private static final boolean GOTENNA_WILL_ENCRYPT_MESSAGES = true; // Can optionally encrypt messages using SDK
     private UserDataStore userDataStore = null;
     private BluetoothAdapterManager bluetoothAdapterManager = null;
     private GTConnectionManager gtConnectionManager = null;
@@ -66,17 +67,25 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
     public boolean goTennaNeedConnect = true;
     public boolean goTennaHasPreviousConnectionData = false;
     public GoTennaTechnicalMessageListener goTennaTechnicalMessageListener = null;
+    private GotennaSendMessageInteractor mGotennaSendMessageInteractor = null;
 
     public double[] mGoTennaControlChannel = new double[3];
     public double[] mGoTennaDataChannel = new double[13];
-    public double mGoTennaPower = 11.8;
-    public double mGoTennaBandwidth = 4;
+    public double mGoTennaPower = 4;
+    public double mGoTennaBandwidth = 11.8;
     public String mGoTennaUserName = "username";
     public long mGoTennaGID = 999666;
     public long mGoTennaMpditGID = 666999;
 
     public String mGotennaChatUserGID = "?";
     public String mGotennaChatUserName = "?";
+
+    /**
+     * Byte limit on text to make sure we don't go over goTenna's payload limit.
+     * Made the limit here lower than the actual limit since text messages get inflated
+     * by a few bytes when serialized later.
+     */
+    public static final int GOTENNA_MESSAGE_BYTE_LIMIT = 200;//227;
 
 
 
@@ -150,6 +159,8 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
             setFrequencySlotInfoInteractor = new SetFrequencySlotInfoInteractor();
 
             gtConnectionManager.addGtConnectionListener(this);
+
+            mGotennaSendMessageInteractor = new GotennaSendMessageInteractor();
         } catch (Exception e) {
             mLastExceptionGoTennaMessage = e.getMessage();
             return false;
@@ -174,7 +185,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
                 if (response.getResponseCode() == GTResponse.GTCommandResponseCode.POSITIVE)
                 {
                     //view.showSetGidSuccessMessage();
-                    goTennaAddMessage("Konfiguracja GID zakończyła się powodzeniem!");
+                    //goTennaAddMessage("Konfiguracja GID zakończyła się powodzeniem!");
                 }
                 else
                 {
@@ -208,7 +219,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
                 {
                     case POSITIVE:
                         //view.showEchoSuccessMessage();
-                        goTennaAddMessage("Test goTenna zakońcozny pomyślnie!");
+                        goTennaAddMessage("Test goTenna zakończony pomyślnie!");
                         break;
                     case NEGATIVE:
                         //view.showEchoNackMessage();
@@ -251,6 +262,8 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
                 info += "\n Firmware: " + systemInfoResponseData.getFirmwareVersion().toString();
 
                 info += "\n Nr seryjny: " + systemInfoResponseData.getGoTennaSerialNumber();
+
+                info += "\n Ostatni błąd: " + mLastExceptionGoTennaMessage;
 
                 mGoTennaStatus = info;
 
@@ -754,15 +767,17 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
     }
 
 
+
+
+    //==============================================================================================
+    // Gotenna: Private and public Class Instance Methods
+    //==============================================================================================
+
     public void UpdateConnectedGotennaParameters()
     {
         if(goTennaNeedConnect)  return;
         onGotennaConnected();
     }
-
-    //==============================================================================================
-    // Private Class Instance Methods
-    //==============================================================================================
 
     private void onGotennaConnected()
     {
@@ -786,18 +801,31 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         if(5.0 == mGoTennaPower)    frequencySlot.setPowerLevel(PowerLevel.FIVE);
 
         frequencySlot.setBandwidth(Bandwidth._11_80_kHZ);
+        if(4.84 == mGoTennaBandwidth)    frequencySlot.setBandwidth(Bandwidth._4_84_kHZ);
+        if(7.28 == mGoTennaBandwidth)    frequencySlot.setBandwidth(Bandwidth._7_28_kHZ);
+
+
         try
         {
             // There is a default set of frequencies that a slot get populated with if you do not know what to use
             List<GTFrequencyChannel> frequencyChannels = new ArrayList<>();
-            frequencyChannels.add(new GTFrequencyChannel(150000000, true));
-            frequencyChannels.add(new GTFrequencyChannel(151000000, false));
+            //frequencyChannels.add(new GTFrequencyChannel(150000000, true));
+            //frequencyChannels.add(new GTFrequencyChannel(151000000, false));
+
+
+
+            for(int i = 0; i < mGoTennaControlChannel.length; i++)
+                frequencyChannels.add(new GTFrequencyChannel(mGoTennaControlChannel[i], true));
+            for(int i = 0; i < mGoTennaDataChannel.length; i++)
+                frequencyChannels.add(new GTFrequencyChannel(mGoTennaDataChannel[i], false));
+
             frequencySlot.setFrequencyChannels(frequencyChannels);
         }
         catch (GTInvalidFrequencyChannelException e)
         {
             e.printStackTrace();
             goTennaAddMessage("Nie prawidłowa konfiguracja częstotliwości goTenna");
+            mLastExceptionGoTennaMessage = "Nie prawidłowa konfiguracja częstotliwości goTenna";
         }
 
         setFrequencySlotInfoInteractor.setFrequencySlotInfoOnGotenna(frequencySlot, new SetFrequencySlotInfoInteractor.SetFrequencySlotInfoListener()
@@ -809,12 +837,25 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
                 switch (setInfoState)
                 {
                     case NON_IDLE_STATE_ERROR:
+                        goTennaAddMessage("Błąd konfiguracji: urządzenie zajęte");
+                        mLastExceptionGoTennaMessage = "Błąd konfiguracji: urządzenie zajęte";
+                        break;
                     case NOT_CONNECTED_ERROR:
+                        goTennaAddMessage("Błąd konfiguracji: brak połączenia");
+                        mLastExceptionGoTennaMessage = "Błąd konfiguracji: brak połączenia";
+                        break;
                     case SET_POWER_LEVEL_ERROR:
+                        goTennaAddMessage("Błąd konfiguracji mocy");
+                        mLastExceptionGoTennaMessage = "Błąd konfiguracji mocy";
+                        break;
                     case SET_BANDWIDTH_BITRATE_ERROR:
+                        goTennaAddMessage("Błąd konfiguracji szerokości pasma");
+                        mLastExceptionGoTennaMessage = "Błąd konfiguracji szerokości pasma";
+                        break;
                     case SET_FREQUENCIES_ERROR:
                         //view.showErrorSettingFrequenciesWarning();
                         goTennaAddMessage("Błąd konfiguracji częstotliwości");
+                        mLastExceptionGoTennaMessage = "Błąd konfiguracji częstotliwości";
                         break;
                     case SET_ALL_SUCCESS:
                         //view.showSdkOptionsScreen();
@@ -825,9 +866,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         });
 
 
-        String username = "user";
-        long gid = 999;
-        goTennaSendSetGidCommand(username, gid);
+        goTennaSendSetGidCommand(mGoTennaUserName, mGoTennaGID);
 
         goTennaNeedConnect = false;
 
@@ -855,6 +894,78 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
          */
     }
 
+    public void AddFirstMpditNode(String mpditGID) {
+        if(mNodesMpdit.size() > 0)  return;
+        MeshNode node = new MeshNode();
+        node.name = "MPDIT";
+        node.ID = mpditGID;
+        node.lat = 52.20;
+        node.lng = 21.05;
+        node.IP = "127.0.0.1";
+        node.data = "?";
+        node.visibleOnMap = false;
+
+        mNodesMpdit.add(node);
+        mNodesGotenna.add(node);
+    }
+
+    public void SetChatUser(String id, String name) {
+        mGotennaChatUserGID = id;
+        mGotennaChatUserName = name;
+    }
+
+    public boolean isGotennaConected() {
+        if(null == gtConnectionManager)     return false;
+        return gtConnectionManager.isConnected();
+    }
+
+    public void GotennaSendTextMessage(String gid, String messageText)
+    {
+        if(messageText.length() >= GOTENNA_MESSAGE_BYTE_LIMIT) {
+            // informacja o tym, że wiadomość jest zadługa
+            return;
+        }
+
+        if(!isGotennaConected()) return;
+
+        if(null == mGotennaSendMessageInteractor) return;
+
+        for(int i = 0 ; i < mNodesGotenna.size(); i++ ) {
+            MeshNode node = mNodesGotenna.get(i);
+            if(gid.compareTo(node.ID) == 0) {
+                MeshNode.GotennaMessage gm = new MeshNode.GotennaMessage();
+                gm.text = messageText;
+                Date currentTime = Calendar.getInstance().getTime();
+
+                gm.time = currentTime.toString();
+                node.messages.add(gm);
+
+                GoTennaMessage messageToSend = GoTennaMessage.createReadyToSendMessage( mGoTennaGID,
+                        Long.parseLong(gid),
+                        messageText);
+
+                //messages.add(messageToSend);
+                //view.showMessages(createMessageViewModels());
+
+                mGotennaSendMessageInteractor.sendMessage(messageToSend, GOTENNA_WILL_ENCRYPT_MESSAGES,
+                        new GotennaSendMessageInteractor.SendGoTennaMessageListener()
+                        {
+                            @Override
+                            public void onMessageResponseReceived()
+                            {
+                                //if (view != null)
+                                {
+                                    //view.showMessages(createMessageViewModels());
+                                }
+                            }
+                        });
+
+                return;
+            }
+
+        }
+    }
+
     //==============================================================================================
     // GTConnectionListener Implementation
     //==============================================================================================
@@ -862,11 +973,24 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
     // goTenna
     @Override
     public void onConnectionStateUpdated(@NonNull GTConnectionState gtConnectionState) {
+        goTennaAddMessage("Stan połączenia zmieniony");
+
         switch (gtConnectionState)
         {
             case CONNECTED:
+                goTennaAddMessage("Gotenna: jest połączenie");
                 onGotennaConnected();
                 break;
+            case DISCONNECTED:
+                goTennaAddMessage("Gotenna: połączenie zerwane");
+                break;
+            case SCANNING:
+                goTennaAddMessage("Gotenna: skanowanie");
+                break;
+            case CONNECTING:
+                goTennaAddMessage("Gotenna: łączenie");
+                break;
+
         }
     }
 
@@ -875,6 +999,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
     public void onConnectionError(@NonNull GTConnectionState gtConnectionState, @NonNull GTConnectionError gtConnectionError) {
         //view.stopTimeoutCountdown();
         //view.dismissScanningProgressDialog();
+        goTennaAddMessage("Nierozpoznany błąd połączenia");
 
         switch (gtConnectionError.getErrorState())
         {
@@ -896,42 +1021,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         }
     }
 
-    public void AddFirstMpditNode(String mpditGID) {
-        if(mNodesMpdit.size() > 0)  return;
-        MeshNode node = new MeshNode();
-        node.name = "MPDIT";
-        node.ID = mpditGID;
-        node.lat = 52.20;
-        node.lng = 21.05;
-        node.IP = "127.0.0.1";
-        node.data = "?";
-        node.visibleOnMap = false;
 
-        mNodesMpdit.add(node);
-        mNodesGotenna.add(node);
-    }
-
-    public void SetChatUser(String id, String name) {
-        mGotennaChatUserGID = id;
-        mGotennaChatUserName = name;
-    }
-
-    public void GotennaSendTextMessage(String gid, String messageText)
-    {
-        for(int i = 0 ; i < mNodesGotenna.size(); i++ ) {
-            MeshNode node = mNodesGotenna.get(i);
-            if(gid.compareTo(node.ID) == 0) {
-                MeshNode.GotennaMessage gm = new MeshNode.GotennaMessage();
-                gm.text = messageText;
-                Date currentTime = Calendar.getInstance().getTime();
-
-                gm.time = currentTime.toString();
-                node.messages.add(gm);
-                return;
-            }
-
-        }
-    }
 
     //==============================================================================================
     // Listener Interface

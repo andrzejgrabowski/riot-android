@@ -164,7 +164,7 @@ public class MpditGotennaConnectionFragment extends VectorBaseFragment implement
 
         String control1 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_CONTROL_CHANNEL_1_PREFERENCE_KEY, "145");
         String control2 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_CONTROL_CHANNEL_2_PREFERENCE_KEY, "146");
-        String control3 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_CONTROL_CHANNEL_1_PREFERENCE_KEY, "147");
+        String control3 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_CONTROL_CHANNEL_3_PREFERENCE_KEY, "147");
 
         String data1 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_1_PREFERENCE_KEY, "148");
         String data2 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_2_PREFERENCE_KEY, "149");

@@ -78,7 +78,7 @@
 
     <uses-feature
         android:name="android.hardware.bluetooth"
-        android:required="false"
+        android:required="true"
         tools:replace="required" /> <!-- jitsi -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /> <!-- Jitsi libs adds CALENDAR permissions, but we can remove them safely according to https://github.com/jitsi/jitsi-meet/issues/4068#issuecomment-480482481 -->
     <uses-permission

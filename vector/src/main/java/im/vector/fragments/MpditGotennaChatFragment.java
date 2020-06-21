@@ -240,15 +240,19 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
                 // wysyłamy wiadomość
                 EditText et = getActivity().findViewById(R.id.gotennaSendMessageEditText);
                 if (null != et) {
-                    String messageText = et.getText().toString();
-                    mpdit.GotennaSendTextMessage(mGID,messageText);
-                    Toast.makeText(getActivity(), messageText, Toast.LENGTH_SHORT).show();
-                    et.setText("");
-                    // refresh recycler
-                    // TO DO !!!
-                    //mAdapter.notifyItemInserted();
-                    mAdapter.notifyDataSetChanged();
-                    mRecyclerView.scrollToPosition(mAdapter.getItemCount()-1);
+                    if(mpdit.isGotennaConected()) {
+                        String messageText = et.getText().toString();
+                        if(messageText.length() < mpdit.GOTENNA_MESSAGE_BYTE_LIMIT) {
+                            mpdit.GotennaSendTextMessage(mGID, messageText);
+                            Toast.makeText(getActivity(), messageText, Toast.LENGTH_SHORT).show();
+                            et.setText("");
+                            // refresh recycler
+                            // TO DO !!!
+                            //mAdapter.notifyItemInserted();
+                            mAdapter.notifyDataSetChanged();
+                            mRecyclerView.scrollToPosition(mAdapter.getItemCount() - 1);
+                        } else { Toast.makeText(getActivity(), "Wiadomość jest za długa", Toast.LENGTH_SHORT).show(); }
+                    } else { Toast.makeText(getActivity(), "Brak połączenia z goTenną", Toast.LENGTH_SHORT).show(); }
 
                 } else { Toast.makeText(getActivity(), "EditText = null", Toast.LENGTH_SHORT).show(); }
 
