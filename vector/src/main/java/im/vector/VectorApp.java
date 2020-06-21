@@ -38,7 +38,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
-import android.text.format.Formatter;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
@@ -473,7 +472,7 @@ public class VectorApp extends MultiDexApplication {
             while(gi.hasNext()) g.add(gi.next());
 
             for(int i =0; i<n.size() && i<g.size() && i<100; i++) {
-                mMpdit.AddUpdateGotennaNode(g.get(i),n.get(i));
+                mMpdit.goTennaAddUpdateNode(g.get(i),n.get(i));
             }
 
             /*String[] n = setNames.toArray(new String[100]);

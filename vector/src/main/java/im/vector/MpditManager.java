@@ -50,10 +50,10 @@ import com.gotenna.sdk.georegion.PlaceFinderTask;
 
 import com.gotenna.sdk.exceptions.GTInvalidAppTokenException;
 import com.gotenna.sdk.responses.SystemInfoResponseData;
-//import com.gotenna.sdk.sample.managers.IncomingMessagesManager;
 
 
-public class MpditManager implements LocationListener, Runnable, GTConnectionManager.GTConnectionListener {
+
+public class MpditManager implements LocationListener, Runnable, GTConnectionManager.GTConnectionListener, GoTennaIncomingMessagesManager.IncomingMessageListener {
 
     // goTenna
     private static final String GOTENNA_APP_TOKEN = "RgIJCQMNEEQVQxlBUAsbHxwBQldHUlgDB0NSAxdRHx4LAwtZRFgLVw4DR1gcXgQE";
@@ -67,6 +67,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
     public boolean goTennaNeedConnect = true;
     public boolean goTennaHasPreviousConnectionData = false;
     public GoTennaTechnicalMessageListener goTennaTechnicalMessageListener = null;
+    public GoTennaMessageListener goTennaMessageListener = null;
     private GotennaSendMessageInteractor mGotennaSendMessageInteractor = null;
 
     public double[] mGoTennaControlChannel = new double[3];
@@ -125,6 +126,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
 
     // co mBroadcastDelay sekund wysyłane są dane do wszystkich użytkowników sieci
     int mBroadcastDelay = 30;
+    int mGoTennaBroadcastDelay = 60;
 
 
 
@@ -151,6 +153,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         try {
             GoTenna.setApplicationToken(context, GOTENNA_APP_TOKEN);
             GoTennaIncomingMessagesManager.getInstance().startListening();
+            GoTennaIncomingMessagesManager.getInstance().addIncomingMessageListener(this);
 
             //userDataStore = UserDataStore.getInstance();
             bluetoothAdapterManager = BluetoothAdapterManager.getInstance();
@@ -398,7 +401,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         return mNodesMpdit;
     }
 
-    public Vector<MeshNode.GotennaMessage> getGotennaMessages(String gid)
+    public Vector<GoTennaMessage> getGotennaMessages(String gid)
     {
         for(int i = 0 ; i < mNodesGotenna.size(); i++ ) {
             MeshNode node = mNodesGotenna.get(i);
@@ -506,7 +509,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         }
     }
 
-    public boolean RemoveGotennaNode(String gid)
+    public boolean goTennaRemoveNode(String gid)
     {
         for(int i = 0; i<mNodesGotenna.size(); i++)
         {
@@ -519,7 +522,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         return false;
     }
 
-    public void AddUpdateGotennaNode(String id, String name)
+    public void goTennaAddUpdateNode(String id, String name)
     {
         for(int i = 0; i<mNodesGotenna.size(); i++)
         {
@@ -550,7 +553,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         //sprawdzamy typ sieci [5]
         if(s.length < 6)    return;
 
-         /*
+        /*
         w paczce przesyłamy:
         0 packetCount
         1 Lat
@@ -707,16 +710,21 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
 
         int iter =0;
         long startTime = System.currentTimeMillis();
+        long startTimeGoTenna = System.currentTimeMillis();
 
 
         mLastPacket = "listening...";
         while (mWork) {
 
             iter++;
-            if(System.currentTimeMillis() - startTime > mBroadcastDelay*1000)
-            {
+            if(System.currentTimeMillis() - startTime > mBroadcastDelay*1000) {
                 startTime = System.currentTimeMillis();
                 sendBroadcast(mSocket);
+            }
+
+            if(System.currentTimeMillis() - startTimeGoTenna > mGoTennaBroadcastDelay*1000) {
+                startTimeGoTenna = System.currentTimeMillis();
+                goTennaSendGPS();
             }
 
 
@@ -766,14 +774,37 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
 
     }
 
+    private void goTennaSendGPS() {
+        // petla po wszystkich
+        for (MeshNode node : mNodesGotenna) {
+            String messageText = String.format("GPS%f\t%f",mLat,mLng);
 
+            GoTennaMessage messageToSend = GoTennaMessage.createReadyToSendMessage( mGoTennaGID,
+                    Long.parseLong(node.ID),
+                    messageText);
+
+            mGotennaSendMessageInteractor.sendMessage(messageToSend, GOTENNA_WILL_ENCRYPT_MESSAGES,
+                    new GotennaSendMessageInteractor.SendGoTennaMessageListener()
+                    {
+                        @Override
+                        public void onMessageResponseReceived()
+                        {
+                            if (goTennaMessageListener != null)
+                            {
+                                //view.showMessages(createMessageViewModels());
+                                //goTennaMessageListener.onMessageResponseReceived();
+                            }
+                        }
+                    });
+        }
+    }
 
 
     //==============================================================================================
     // Gotenna: Private and public Class Instance Methods
     //==============================================================================================
 
-    public void UpdateConnectedGotennaParameters()
+    public void goTennaUpdateConnectedParameters()
     {
         if(goTennaNeedConnect)  return;
         onGotennaConnected();
@@ -909,7 +940,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         mNodesGotenna.add(node);
     }
 
-    public void SetChatUser(String id, String name) {
+    public void goTennaSetChatUser(String id, String name) {
         mGotennaChatUserGID = id;
         mGotennaChatUserName = name;
     }
@@ -919,7 +950,122 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         return gtConnectionManager.isConnected();
     }
 
-    public void GotennaSendTextMessage(String gid, String messageText)
+    private void goTennaIncominMessageGPS(GoTennaMessage incomingMessage) {
+        MeshNode sender = null;
+        String gid = Long.toString(incomingMessage.getSenderGID());
+        int n = -1;
+        for(int i = 0 ; i < mNodesGotenna.size(); i++ ) {
+            MeshNode node = mNodesGotenna.get(i);
+            if (gid.compareTo(node.ID) == 0) {
+                n = i;
+                sender = node;
+                break;
+            }
+        }
+
+        if(null == sender) {
+            MeshNode node = new MeshNode();
+            node.name = "???";
+            node.ID = gid;
+            node.lat = 52.20;
+            node.lng = 21.05;
+            node.IP = "127.0.0.1";
+            node.data = "?";
+            node.visibleOnMap = false;
+            mNodesGotenna.add(node);
+            sender = node;
+        }
+
+        sender.visibleOnMap = true;
+        sender.data = incomingMessage.text;
+        // parsujemy wiadomosc
+        // TO DO !!!
+
+        String data = incomingMessage.text.substring(3);
+        String[] s = data.split("\t");
+        if(s.length < 2)    return;
+        /*
+        w paczce przesyłamy:
+        0 Lat
+        1 Lng
+        */
+
+        try {
+            sender.lat = Double.parseDouble(s[0]);
+        } catch (Exception e) {}
+
+        try {
+            sender.lng = Double.parseDouble(s[1]);
+        } catch (Exception e) {}
+
+
+
+
+    }
+
+    private void goTennaIncominMessageText(GoTennaMessage incomingMessage) {
+        MeshNode sender = null;
+        incomingMessage.fromHost = false;
+        Date currentTime = Calendar.getInstance().getTime();
+        incomingMessage.time = currentTime.toString();
+
+        String gid = Long.toString(incomingMessage.getSenderGID());
+        int n = -1;
+        for(int i = 0 ; i < mNodesGotenna.size(); i++ ) {
+            MeshNode node = mNodesGotenna.get(i);
+            if (gid.compareTo(node.ID) == 0) {
+                n = i;
+                sender = node;
+                break;
+            }
+        }
+
+        if(null == sender) {
+            MeshNode node = new MeshNode();
+            node.name = "???";
+            node.ID = gid;
+            node.lat = 52.20;
+            node.lng = 21.05;
+            node.IP = "127.0.0.1";
+            node.data = "?";
+            node.visibleOnMap = false;
+            mNodesGotenna.add(node);
+
+            sender = node;
+            n = mNodesGotenna.size() - 1;
+        }
+
+        sender.messages.add(incomingMessage);
+
+        if (goTennaMessageListener != null)     goTennaMessageListener.onIncomingMessage(sender.name,incomingMessage.text.substring(3));
+    }
+
+    @Override
+    public void onIncomingMessage(GoTennaMessage incomingMessage) {
+
+        // sprawdzamy rodzaj wiadomosci
+        if(incomingMessage.text.length() < 3)
+            return;
+
+
+
+        String header = incomingMessage.text.substring(0,3);
+        //incomingMessage.text = incomingMessage.text.substring(3);
+        //if (goTennaMessageListener != null)     goTennaMessageListener.onIncomingMessage(header, incomingMessage.text.substring(3));
+
+        if(header.compareTo("TXT") == 0) {
+            goTennaIncominMessageText(incomingMessage);
+            return;
+        }
+
+        if(header.compareTo("GPS") == 0) {
+            goTennaIncominMessageGPS(incomingMessage);
+            return;
+        }
+
+    }
+
+    public void goTennaSendTextMessage(String gid, String messageText)
     {
         if(messageText.length() >= GOTENNA_MESSAGE_BYTE_LIMIT) {
             // informacja o tym, że wiadomość jest zadługa
@@ -933,16 +1079,18 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         for(int i = 0 ; i < mNodesGotenna.size(); i++ ) {
             MeshNode node = mNodesGotenna.get(i);
             if(gid.compareTo(node.ID) == 0) {
-                MeshNode.GotennaMessage gm = new MeshNode.GotennaMessage();
-                gm.text = messageText;
-                Date currentTime = Calendar.getInstance().getTime();
 
-                gm.time = currentTime.toString();
-                node.messages.add(gm);
+
 
                 GoTennaMessage messageToSend = GoTennaMessage.createReadyToSendMessage( mGoTennaGID,
                         Long.parseLong(gid),
                         messageText);
+
+                messageToSend.text = "TXT"+messageText;
+                Date currentTime = Calendar.getInstance().getTime();
+
+                messageToSend.time = currentTime.toString();
+                node.messages.add(messageToSend);
 
                 //messages.add(messageToSend);
                 //view.showMessages(createMessageViewModels());
@@ -953,9 +1101,10 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
                             @Override
                             public void onMessageResponseReceived()
                             {
-                                //if (view != null)
+                                if (goTennaMessageListener != null)
                                 {
                                     //view.showMessages(createMessageViewModels());
+                                    goTennaMessageListener.onMessageResponseReceived();
                                 }
                             }
                         });
@@ -1023,6 +1172,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
 
 
 
+
     //==============================================================================================
     // Listener Interface
     //==============================================================================================
@@ -1032,5 +1182,15 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         void onNewGotennaTechnicalMessage();
         void onGotennaTechnicalMessageConnected();
         void onNewGotennaStatusMessage();
+    }
+
+    //==============================================================================================
+    // Listener Interface
+    //==============================================================================================
+
+    public interface GoTennaMessageListener
+    {
+        void onMessageResponseReceived();
+        void onIncomingMessage(String sender, String text);
     }
 }

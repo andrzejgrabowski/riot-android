@@ -33,10 +33,13 @@ public class GoTennaMessage
     private long senderGID;
     private long receiverGID;
     private Date sentDate;
-    private String text;
+    public String time;
+    public String text;
     private MessageStatus messageStatus;
     private String detailInfo;
     private int hopCount;
+    public boolean fromHost = true;
+    public boolean willDisplayAckConfirmation = true;
 
     public enum MessageStatus
     {

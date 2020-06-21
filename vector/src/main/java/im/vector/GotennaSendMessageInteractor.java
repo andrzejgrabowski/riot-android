@@ -127,7 +127,7 @@ public class GotennaSendMessageInteractor
             {
                 if (error.getCode() == GTError.DATA_RATE_LIMIT_EXCEEDED)
                 {
-                    Log.w(TAG, String.format(Locale.US, "Data rate limit was exceeded. Resending message in %d seconds", MESSAGE_RESEND_DELAY_MILLISECONDS / TimeUtils.MILLISECONDS_PER_SECOND));
+                    Log.w(TAG, String.format(Locale.US, "Limit szybkości przesyłania danych został przekroczony. Ponowne wysłanie wiadomości za %d sekund", MESSAGE_RESEND_DELAY_MILLISECONDS / TimeUtils.MILLISECONDS_PER_SECOND));
                     attemptToResendWithDelay();
                 }
                 else

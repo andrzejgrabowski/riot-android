@@ -349,7 +349,7 @@ public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnS
         if (app != null) {
             MpditManager mpdit = app.getMpditManger();
             if (mpdit != null) {
-                mpdit.SetChatUser(id,name);
+                mpdit.goTennaSetChatUser(id,name);
             }
         }
 

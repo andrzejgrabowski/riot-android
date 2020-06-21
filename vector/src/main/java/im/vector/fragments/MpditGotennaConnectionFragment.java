@@ -13,8 +13,6 @@ import im.vector.R;
 import im.vector.VectorApp;
 import im.vector.util.PreferencesManager;
 
-import android.app.Application;
-
 import androidx.preference.PreferenceManager;
 
 import java.util.Objects;
@@ -328,7 +326,7 @@ public class MpditGotennaConnectionFragment extends VectorBaseFragment implement
 
             case R.id.goTennaUpdate:
                 UpdateGoTennaData();
-                mpdit.UpdateConnectedGotennaParameters();
+                mpdit.goTennaUpdateConnectedParameters();
                 break;
         }
     }

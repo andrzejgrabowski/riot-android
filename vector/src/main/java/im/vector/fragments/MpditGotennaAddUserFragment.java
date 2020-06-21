@@ -18,13 +18,9 @@ import im.vector.MeshNode;
 import im.vector.MpditManager;
 import im.vector.R;
 import im.vector.VectorApp;
-import im.vector.activity.VectorHomeActivity;
 import im.vector.adapters.HomeGotennaAdapter;
-import im.vector.util.BugReporter;
 import im.vector.util.PreferencesManager;
 import im.vector.util.VectorUtils;
-
-import android.app.Application;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.collection.ArraySet;
@@ -32,11 +28,6 @@ import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.matrix.androidsdk.core.Log;
-
-import java.lang.reflect.Array;
-import java.util.Objects;
-import java.util.Set;
 import java.util.Vector;
 
 
@@ -273,7 +264,7 @@ public class MpditGotennaAddUserFragment extends VectorBaseFragment implements V
                     String name = edName.getText().toString();
                     String id = edGid.getText().toString();
                     if(id.length() > 0 && name.length() > 0) {
-                        mpdit.AddUpdateGotennaNode(id, name);
+                        mpdit.goTennaAddUpdateNode(id, name);
                         UpdateGotennaNamesInSharedPreferences();
 
 
@@ -308,7 +299,7 @@ public class MpditGotennaAddUserFragment extends VectorBaseFragment implements V
                             MpditManager mpdit = getMpditManager();
                             if (mpdit == null) return;
 
-                            if(mpdit.RemoveGotennaNode(id)) {
+                            if(mpdit.goTennaRemoveNode(id)) {
                                 UpdateGotennaNamesInSharedPreferences();
                                 mAdapter.notifyDataSetChanged();
                                 Toast.makeText(getContext(), "Użytkownik usunięty", Toast.LENGTH_SHORT).show();

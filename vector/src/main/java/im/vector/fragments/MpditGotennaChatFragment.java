@@ -4,8 +4,8 @@ package im.vector.fragments;
 
 
 
-        import android.app.AlertDialog;
-        import android.content.SharedPreferences;
+        import android.content.Context;
+        import android.graphics.drawable.AnimationDrawable;
         import android.os.Bundle;
         import android.view.LayoutInflater;
         import android.view.View;
@@ -16,27 +16,18 @@ package im.vector.fragments;
         import android.widget.TextView;
         import android.widget.Toast;
 
-        import im.vector.MeshNode;
+        import im.vector.GoTennaMessage;
         import im.vector.MpditManager;
         import im.vector.R;
         import im.vector.VectorApp;
-        import im.vector.util.PreferencesManager;
-        import im.vector.util.VectorUtils;
 
-        import android.app.Application;
-
-        import androidx.collection.ArraySet;
-        import androidx.preference.PreferenceManager;
         import androidx.recyclerview.widget.LinearLayoutManager;
         import androidx.recyclerview.widget.RecyclerView;
 
-        import java.lang.reflect.Array;
-        import java.util.Objects;
-        import java.util.Set;
         import java.util.Vector;
 
 
-public class MpditGotennaChatFragment extends VectorBaseFragment implements View.OnClickListener{
+public class MpditGotennaChatFragment extends VectorBaseFragment implements View.OnClickListener, MpditManager.GoTennaMessageListener {
 
 
     private RecyclerView mRecyclerView = null;
@@ -45,10 +36,27 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
     private String mGID = "?";
     private String mUsername = "?";
 
+    @Override
+    public void onMessageResponseReceived() {
+        if(null != mRecyclerView && null != mAdapter) {
+            mAdapter.notifyDataSetChanged();
+            mRecyclerView.scrollToPosition(mAdapter.getItemCount()-1);
+        }
+    }
+
+    @Override
+    public void onIncomingMessage(String sender, String text) {
+        if(null != mRecyclerView && null != mAdapter) {
+            mAdapter.notifyDataSetChanged();
+            mRecyclerView.scrollToPosition(mAdapter.getItemCount()-1);
+
+            Toast.makeText(getActivity(), sender + ": " + text, Toast.LENGTH_SHORT).show();
+        }
+    }
 
 
     public class GotennaChatAdapter extends RecyclerView.Adapter<GotennaChatAdapter.GotennaMessageViewHolder> {
-        private Vector<MeshNode.GotennaMessage> mDataset;
+        private Vector<GoTennaMessage> mDataset;
         private static final int CHAT_MINE_TYPE = 0;
         private static final int CHAT_OTHER_TYPE = 1;
 
@@ -66,7 +74,7 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
         }
 
         // Provide a suitable constructor (depends on the kind of dataset)
-        public GotennaChatAdapter(Vector<MeshNode.GotennaMessage> dataset) {
+        public GotennaChatAdapter(Vector<GoTennaMessage> dataset) {
             mDataset = dataset;
         }
 
@@ -110,7 +118,7 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
             //TextView tvId = holder.mView.findViewById(R.id.gotenna_contact_gid);
             if(position < mDataset.size() && position >= 0) {
                 if(m!=null) {
-                    m.setText(mDataset.get(position).text);
+                    m.setText(mDataset.get(position).text.substring(3));
                     m.setVisibility(View.VISIBLE);
                 }
                 if(time!=null) {
@@ -119,7 +127,39 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
                 }
                 if(iv!=null) {
 
-                    time.setVisibility(View.VISIBLE);
+                    //time.setVisibility(View.VISIBLE);
+
+                    if (mDataset.get(position).fromHost)
+                    {
+                        switch (mDataset.get(position).getMessageStatus())
+                        {
+                            case SENDING:
+                                iv.setImageResource(R.drawable.sending_animation);
+                                AnimationDrawable animationDrawable = (AnimationDrawable) iv.getDrawable();
+                                animationDrawable.start();
+                                break;
+                            case SENT_SUCCESSFULLY:
+                            {
+                                if (mDataset.get(position).willDisplayAckConfirmation)
+                                {
+                                    iv.setImageResource(R.drawable.ic_success);
+                                }
+                                else
+                                {
+                                    iv.setImageResource(R.drawable.ic_clear_square);
+                                }
+                            }
+                            break;
+                            case ERROR_SENDING:
+                                iv.setImageResource(R.drawable.ic_failed);
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        iv.setVisibility(View.GONE);
+                    }
+
                 }
                 //if(tvId!=null)    tvId.setText(mDataset.get(position).ID);
                 //ImageView iv = holder.mView.findViewById(R.id.adapter_item_gotenna_contact_avatar);
@@ -186,6 +226,8 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
 
         MpditManager mpdit = getMpditManager();
 
+        mpdit.goTennaMessageListener = this;
+
         mGID = mpdit.mGotennaChatUserGID;
         mUsername = mpdit.mGotennaChatUserName;
 
@@ -216,7 +258,21 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
     @Override
     public void onPause() {
         super.onPause();
+    }
 
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+
+        MpditManager mpdit = getMpditManager();
+        if(null != mpdit) mpdit.goTennaMessageListener = this;
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        MpditManager mpdit = getMpditManager();
+        if(null != mpdit) mpdit.goTennaMessageListener = null;
     }
 
     /*
@@ -243,7 +299,7 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
                     if(mpdit.isGotennaConected()) {
                         String messageText = et.getText().toString();
                         if(messageText.length() < mpdit.GOTENNA_MESSAGE_BYTE_LIMIT) {
-                            mpdit.GotennaSendTextMessage(mGID, messageText);
+                            mpdit.goTennaSendTextMessage(mGID, messageText);
                             Toast.makeText(getActivity(), messageText, Toast.LENGTH_SHORT).show();
                             et.setText("");
                             // refresh recycler

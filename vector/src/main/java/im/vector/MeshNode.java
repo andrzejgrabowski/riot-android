@@ -13,13 +13,14 @@ import java.util.Vector;
         */
 public class MeshNode
 {
-    public static class GotennaMessage
+    /*public static class GotennaMessage
     {
         public String text;
         public String time;
+        public GoTennaMessage goTennaMessage = null;
         public boolean fromHost = true;
-        public boolean receiptConfiermed = false;
-    }
+        public boolean receiptConfirmed = false;
+    }*/
 
     public double lat;
     public double lng;
@@ -28,5 +29,5 @@ public class MeshNode
     public String ID;
     public String name;
     public boolean visibleOnMap;
-    public Vector<GotennaMessage> messages = new Vector<GotennaMessage>();
+    public Vector<GoTennaMessage> messages = new Vector<GoTennaMessage>();
 }
