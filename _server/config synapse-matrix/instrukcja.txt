@@ -1,0 +1,7 @@
+Co do synapse, najpierw trzeba zarejestrowaæ nowego usera jeœli jeszcze tego nie zrobi³eœ:
+register_new_matrix_user -c /etc/matrix-synapse/homeserver.yaml http://127.0.0.1
+
+
+Oba pliki powinny byæ w /etc/matrix-synapse/
+homeserver.signing.key
+homeserver.yaml

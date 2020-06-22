@@ -1,0 +1,27 @@
+{
+    "sdk_token":    "Put your valid SDK TOKEN here!",
+    "pro":
+    {
+        "rf_settings":
+        {
+            "power_enum": 0,
+            "control_freqs": [150000000],
+            "data_freqs": [151000000],
+            "bandwidth": 11.8
+        },
+        "___spi_settings":
+        {
+            "bus_no": 0,
+            "chip_no": 0,
+            "request_gpio": 22,
+            "ready_gpio": 27
+        }
+    },
+    "mesh":
+    {
+        "geo_settings":
+        {
+            "region": 1
+        }
+    }
+}
