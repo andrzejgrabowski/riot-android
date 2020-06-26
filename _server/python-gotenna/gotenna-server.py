@@ -46,6 +46,7 @@ class goTennaCLI(cmd.Cmd):
             geo_settings=goTenna.settings.GeoSettings())
         self._do_encryption = True
         self._awaiting_disconnect_after_fw_update = [False]
+        self.token = "RgIJCQMNEEQVQxlBUAsbHxwBQldHUlgDB0NSAxdRHx4LAwtZRFgLVw4DR1gcXgQE"
 
     def precmd(self, line):
         if not self.api_thread\
@@ -841,6 +842,7 @@ def run_cli():
     """
     cli_obj = goTennaCLI()
     try:
+        cli_obj.do_sdk_token(cli_obj.token)
         cli_obj.cmdloop("Welcome to the goTenna API sample! "
                         "Press ? for a command list.\n"
                         "You must begin by entering an SDK token with the "
