@@ -90,6 +90,7 @@ import butterknife.OnClick;
 import im.vector.BuildConfig;
 import im.vector.LoginHandler;
 import im.vector.Matrix;
+import im.vector.MpditManager;
 import im.vector.PhoneNumberHandler;
 import im.vector.R;
 import im.vector.RegistrationManager;
@@ -2105,6 +2106,29 @@ public class LoginActivity extends MXCActionBarActivity implements RegistrationM
                     Log.e(LOG_TAG, "onLoginClick : Network Error: " + e.getMessage(), e);
                     enableLoadingScreen(false);
                     Toast.makeText(getApplicationContext(), getString(R.string.login_error_network_error), Toast.LENGTH_LONG).show();
+
+                    // MPDIT GOTENNA BRAK SIECI
+                    try {
+                        new AlertDialog.Builder(getBaseContext())
+                                .setMessage("Błąd sieci Ubiquity. Czy uruchomić aplikację w trybie połączenia tylko z siecią MESH typu goTenna?")
+                                .setCancelable(false)
+                                .setPositiveButton("Tryb goTenna", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+
+                                    }
+                                })
+                                .setNegativeButton("Ponów próbę połączenia", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        //BugReporter.deleteCrashFile(VectorHomeActivity.this);
+                                    }
+                                })
+                                .show();
+                    } catch (Exception ee) {
+                        //Log.e(LOG_TAG, "## onResume() : appCrashedAlert failed " + e.getMessage(), e);
+                    }
+
                 }
 
                 @Override

@@ -288,7 +288,7 @@ public class MpditGotennaAddUserFragment extends VectorBaseFragment implements V
     @Override
     public void onSelectGotenna(String id, String name) {
         // tworozmy alert box i usuwamy użytkownika
-        // crash reported by a rage shake
+
         try {
             new AlertDialog.Builder(getContext())
                     .setMessage("Czy napewno chcesz usunąć użytkownika " + name + " GID: " + id)

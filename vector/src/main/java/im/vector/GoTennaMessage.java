@@ -40,6 +40,7 @@ public class GoTennaMessage
     private int hopCount;
     public boolean fromHost = true;
     public boolean willDisplayAckConfirmation = true;
+    public int messageID;
 
     public enum MessageStatus
     {
@@ -137,6 +138,11 @@ public class GoTennaMessage
     //==============================================================================================
     // Static Helper Methods
     //==============================================================================================
+
+    public static GoTennaMessage createReceivedMessage(long senderGID, long receiverGID, String text)
+    {
+        return new GoTennaMessage(senderGID, receiverGID, new Date(), text, MessageStatus.SENT_SUCCESSFULLY, null);
+    }
 
     public static GoTennaMessage createReadyToSendMessage(long senderGID, long receiverGID, String text)
     {

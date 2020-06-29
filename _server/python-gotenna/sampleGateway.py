@@ -160,7 +160,7 @@ class Gateway:
     }
 
     def gotenna_event_callback(self, event):
-        print("next event from gotenna")
+        #print("next event from gotenna")
         handler = self._EVENT_HANDLERS.get(event.event_type,
                                            lambda s, e: s._logger.info(str(e)))
         self._logger.debug(event)
@@ -223,6 +223,7 @@ class Gateway:
         print("Connected: ")
         print(connected)
 
+        
         devices_present = self._driver.devices_present
         print("Devices present: ")
         print(devices_present)
@@ -412,8 +413,11 @@ class Gateway:
         self._driver.send_private(destination,  payload, _spmc, _ack_callback, encrypt=False)
 
     def exit(self):
-        self._handle_disconnect(None)
-        sys.exit(1)
+        if(self._driver.connected):
+            self._driver.disconnect()
+            self._driver.stop()
+        #self._handle_disconnect(None)
+        #sys.exit(1)
 
 def interact():
     """ Main interactable function called when executed as a script"""
