@@ -103,7 +103,7 @@ public class MpditGotennaAddUserFragment extends VectorBaseFragment implements V
                     //Toast.makeText(mContext, n, Toast.LENGTH_SHORT).show();
 
                     if(null != mListener)
-                        mListener.onSelectGotenna(id,n);
+                        mListener.onSelectGotenna(id,n,0);
                     //mListener.onSelectRoom(room, viewHolder.getAdapterPosition());
                 }
             });
@@ -117,7 +117,7 @@ public class MpditGotennaAddUserFragment extends VectorBaseFragment implements V
                     //Toast.makeText(mContext, n, Toast.LENGTH_SHORT).show();
 
                     if(null != mListener)
-                        mListener.onLongClickGotenna(n,id);
+                        mListener.onLongClickGotenna(n,id,0);
                     //mListener.onLongClickRoom(v, room, viewHolder.getAdapterPosition());
                     return true;
                 }
@@ -286,7 +286,7 @@ public class MpditGotennaAddUserFragment extends VectorBaseFragment implements V
 
 
     @Override
-    public void onSelectGotenna(String id, String name) {
+    public void onSelectGotenna(String id, String name, int mode) {
         // tworozmy alert box i usuwamy użytkownika
 
         try {
@@ -322,7 +322,7 @@ public class MpditGotennaAddUserFragment extends VectorBaseFragment implements V
    */
 
     @Override
-    public void onLongClickGotenna(String id, String name) {
+    public void onLongClickGotenna(String id, String name, int mode) {
 
     }
 }

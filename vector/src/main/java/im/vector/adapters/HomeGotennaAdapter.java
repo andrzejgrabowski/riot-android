@@ -64,6 +64,8 @@ public class HomeGotennaAdapter extends RecyclerView.Adapter<HomeGotennaAdapter.
     }
 
 
+    public int mMode = MpditManager.CHAT_MODE_GOTENNA;
+
     private final int mLayoutRes;
     private Vector<MeshNode> mGotennas = new Vector<MeshNode>();
     private Context mContext;
@@ -95,8 +97,12 @@ public class HomeGotennaAdapter extends RecyclerView.Adapter<HomeGotennaAdapter.
         mContext = context;
 
         MpditManager mpdit = getMpditManager();
-        if(null != mpdit)
-            mGotennas = mpdit.getGotennaNodes();// + mpdit.getMpditNodes();
+        if(null != mpdit) {
+            if(MpditManager.CHAT_MODE_GOTENNA == mMode)
+                mGotennas = mpdit.getGotennaNodes();// + mpdit.getMpditNodes();
+            if(MpditManager.CHAT_MODE_GOTENNA_UBIQUITY == mMode)
+                mGotennas = mpdit.getUbiquityNodes();// + mpdit.getMpditNodes();
+        }
 
         mLayoutRes = layoutRes;
     }
@@ -151,7 +157,7 @@ public class HomeGotennaAdapter extends RecyclerView.Adapter<HomeGotennaAdapter.
                     Toast.makeText(mContext, n, Toast.LENGTH_SHORT).show();
 
                     if(null != mListener)
-                        mListener.onSelectGotenna(id,n);
+                        mListener.onSelectGotenna(id,n,mMode);
                     //mListener.onSelectRoom(room, viewHolder.getAdapterPosition());
                 }
             });
@@ -164,7 +170,7 @@ public class HomeGotennaAdapter extends RecyclerView.Adapter<HomeGotennaAdapter.
                     Toast.makeText(mContext, id, Toast.LENGTH_SHORT).show();
 
                     if(null != mListener)
-                        mListener.onLongClickGotenna(n,id);
+                        mListener.onLongClickGotenna(n,id,mMode);
                     //mListener.onLongClickRoom(v, room, viewHolder.getAdapterPosition());
                     return true;
                 }
@@ -260,8 +266,12 @@ public class HomeGotennaAdapter extends RecyclerView.Adapter<HomeGotennaAdapter.
             filterRooms(mCurrentFilterPattern);
         }*/
         MpditManager mpdit = getMpditManager();
-        if(null != mpdit)
-            mGotennas = mpdit.getGotennaNodes();
+        if(null != mpdit) {
+            if (MpditManager.CHAT_MODE_GOTENNA == mMode)
+                mGotennas = mpdit.getGotennaNodes();
+            if (MpditManager.CHAT_MODE_GOTENNA_UBIQUITY == mMode)
+                mGotennas = mpdit.getUbiquityNodes();
+        }
         notifyDataSetChanged();
     }
 
@@ -344,9 +354,9 @@ public class HomeGotennaAdapter extends RecyclerView.Adapter<HomeGotennaAdapter.
      */
 
     public interface OnSelectGotennaListener {
-        void onSelectGotenna(String id, String name);
+        void onSelectGotenna(String id, String name, int mode);
 
-        void onLongClickGotenna(String id, String name);
+        void onLongClickGotenna(String id, String name, int mode);
     }
 }
 

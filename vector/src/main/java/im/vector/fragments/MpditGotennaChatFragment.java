@@ -296,7 +296,7 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
                 // wysyłamy wiadomość
                 EditText et = getActivity().findViewById(R.id.gotennaSendMessageEditText);
                 if (null != et) {
-                    if(mpdit.isGotennaConected()) {
+                    if(mpdit.isGotennaConnected()) {
                         String messageText = et.getText().toString();
                         if(messageText.length() < mpdit.GOTENNA_MESSAGE_BYTE_LIMIT) {
                             mpdit.goTennaSendTextMessage(mGID, messageText);

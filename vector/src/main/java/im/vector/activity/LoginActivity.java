@@ -2109,7 +2109,7 @@ public class LoginActivity extends MXCActionBarActivity implements RegistrationM
 
                     // MPDIT GOTENNA BRAK SIECI
                     try {
-                        new AlertDialog.Builder(getBaseContext())
+                        new AlertDialog.Builder(getApplicationContext())
                                 .setMessage("Błąd sieci Ubiquity. Czy uruchomić aplikację w trybie połączenia tylko z siecią MESH typu goTenna?")
                                 .setCancelable(false)
                                 .setPositiveButton("Tryb goTenna", new DialogInterface.OnClickListener() {

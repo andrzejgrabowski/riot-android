@@ -73,6 +73,7 @@ public class HomeSectionGotennaView extends RelativeLayout {
     private String mNoItemPlaceholder = "?";
     private String mNoResultPlaceholder = "?";
     private String mCurrentFilter = "?";
+    private int mAdapterMode = 0;
 
     public HomeSectionGotennaView(Context context) {
         super(context);
@@ -251,6 +252,7 @@ public class HomeSectionGotennaView extends RelativeLayout {
         mRecyclerView.setNestedScrollingEnabled(nestedScrollEnabled);
 
         mAdapter = new HomeGotennaAdapter(getContext(), itemResId);//, onSelectRoomListener, invitationListener, moreActionListener);
+        mAdapter.mMode = mAdapterMode;
         mAdapter.mListener = onSelectGotennaListener;
         mRecyclerView.setAdapter(mAdapter);
 
@@ -262,6 +264,13 @@ public class HomeSectionGotennaView extends RelativeLayout {
                 onDataUpdated();
             }
         });
+    }
+
+    public void setAdapterMode(int mode)
+    {
+        mAdapterMode = mode;
+        if(null != mAdapter)
+            mAdapter.mMode = mode;
     }
 
     /**
