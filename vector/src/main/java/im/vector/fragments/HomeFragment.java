@@ -72,6 +72,9 @@ public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnS
     @BindView(R.id.gotenna_section)
     HomeSectionGotennaView mGotennaSection;// = null;
 
+    @BindView(R.id.gotenna_ubiquity_section)
+    HomeSectionGotennaView mGotennaUbiquitySection;// = null;
+
     @BindView(R.id.server_notices_section)
     HomeSectionView mServerNoticesSection;
 
@@ -202,6 +205,17 @@ public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnS
                     R.layout.adapter_item_circular_room_view, true, this, null, null);
         }
 
+        // GoTenna - ubiquity
+        if(null != mGotennaUbiquitySection) {
+            mGotennaUbiquitySection.setTitle(R.string.bottom_action_gotenna_ubiquity);
+            mGotennaUbiquitySection.setPlaceholders(getString(R.string.no_conversation_placeholder), getString(R.string.no_result_placeholder));
+            mGotennaUbiquitySection.setAdapterMode(MpditManager.CHAT_MODE_GOTENNA_UBIQUITY);
+
+            mGotennaUbiquitySection.setupRoomRecyclerView(new LinearLayoutManager(getActivity(), RecyclerView.HORIZONTAL, false),
+                    R.layout.adapter_item_circular_room_view, true, this, null, null);
+
+        }
+
         // Rooms
         mRoomsSection.setTitle(R.string.bottom_action_rooms);
         mRoomsSection.setPlaceholders(getString(R.string.no_room_placeholder), getString(R.string.no_result_placeholder));
@@ -299,6 +313,10 @@ public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnS
             mGotennaSection.setRooms(gotennas);
             mGotennaSection.onDataUpdated();
         }
+        if(null != mGotennaUbiquitySection) {
+            mGotennaUbiquitySection.setRooms(gotennas);
+            mGotennaUbiquitySection.onDataUpdated();
+        }
         sortAndDisplay(result.getLowPriorities(), notificationComparator, mLowPrioritySection);
         sortAndDisplay(result.getOtherRooms(), notificationComparator, mRoomsSection);
         sortAndDisplay(result.getServerNotices(), notificationComparator, mServerNoticesSection);
@@ -343,23 +361,40 @@ public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnS
     }
 
     @Override
-    public void onSelectGotenna(String id, String name) {
+    public void onSelectGotenna(String id, String name, int mode) {
 
         VectorApp app = VectorApp.getInstance();
+        MpditManager mpdit = null;
         if (app != null) {
-            MpditManager mpdit = app.getMpditManger();
-            if (mpdit != null) {
-                mpdit.goTennaSetChatUser(id,name);
-            }
+            mpdit = app.getMpditManger();
+
         }
 
-        final Intent settingsIntent = new Intent(mActivity, GoTennaChatActivity.class); //VectorHomeActivity.this
 
-        startActivity(settingsIntent);
+        switch (mode) {
+
+            case MpditManager.CHAT_MODE_GOTENNA: {
+                if (mpdit != null) {
+                    mpdit.goTennaSetChatUser(id, name, mode);
+                }
+                final Intent settingsIntent = new Intent(mActivity, GoTennaChatActivity.class); //VectorHomeActivity.this
+                startActivity(settingsIntent);
+            }
+
+            case MpditManager.CHAT_MODE_GOTENNA_UBIQUITY: {
+                if (mpdit != null) {
+                    mpdit.goTennaSetChatUser(id, name, mode);
+                }
+                final Intent settingsIntent = new Intent(mActivity, GoTennaChatActivity.class); //VectorHomeActivity.this
+                startActivity(settingsIntent);
+            }
+
+            break;
+        }
     }
 
     @Override
-    public void onLongClickGotenna(String id, String name) {
+    public void onLongClickGotenna(String id, String name, int mode) {
 
     }
 }

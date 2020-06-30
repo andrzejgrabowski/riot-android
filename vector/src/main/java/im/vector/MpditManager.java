@@ -46,6 +46,10 @@ import com.gotenna.sdk.responses.SystemInfoResponseData;
 
 
 /*
+EIADMOS TEKSTOWA DO KONSOLI MPDIT PRZEZ SIEC GOTENNA
+komunikat jest wysyłany do brami, ale jest sformatowany następująco:
+formatowanie: TXT \t IP \t SENDER_NAME \t MESSAGE_TEXT
+
 KOMUNIKACJA POMIĘDZY SIECIAMI MESH:
 
 1. Wiadomości przesyłane z UBIQUITY do GOTENNA poprzez bramkę pakietem UDP
@@ -53,7 +57,7 @@ wiadomości te sa przesyłane gdy jest połaczenie tylko z siecią Ubiquity popr
 Wiadomości są przechowywane w: mGoTennaMessagesToSendByGateway
 są wysyłąne w funkcji: sendGoTennaMessagesByGateWay() wywoływanej w funkcji: run() wątku
 nowa wiadomość do wektora mGoTennaMessagesToSendByGateway jest dodawana w funkcji: goTennaSendTextMessage()
-formatowanie: TXT \t GID \t MESSAGE_ID \t MESSAGE_TEXT
+formatowanie: TXT \t GID \t SENDER_NAME \t MESSAGE_ID \t MESSAGE_TEXT
 
 
 2. Wiadomości UDP odbierane z bramki przez sieć UBIQUITY
@@ -68,6 +72,7 @@ formatowanie: GTW \t IP \t SENDER_NAME \t MESSAGE_TEXT
 ???
 
 4. Wiadomości odebrane z bramki GOTENNA przesłane przez użytkownika sieci UBIQUITY
+formatowanie: GTW \t IP \t SENDER_NAME \t MESSAGE_TEXT
 ???
  */
 
@@ -98,6 +103,9 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
 
     public String mGotennaChatUserGID = "?";
     public String mGotennaChatUserName = "?";
+    public static final int CHAT_MODE_GOTENNA = 0;
+    public static final int CHAT_MODE_GOTENNA_UBIQUITY = 1;
+    public int mGotennaChatUserMode = CHAT_MODE_GOTENNA;
 
     /**
      * Byte limit on text to make sure we don't go over goTenna's payload limit.
@@ -427,12 +435,23 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
 
     public Vector<GoTennaMessage> getGotennaMessages(String gid)
     {
-        for(int i = 0 ; i < mNodesGotenna.size(); i++ ) {
-            MeshNode node = mNodesGotenna.get(i);
-            if(gid.compareTo(node.ID) == 0)
-                return node.messages;
-        }
+        switch(mGotennaChatUserMode) {
+            case CHAT_MODE_GOTENNA:
+            for (int i = 0; i < mNodesGotenna.size(); i++) {
+                MeshNode node = mNodesGotenna.get(i);
+                if (gid.compareTo(node.ID) == 0)
+                    return node.messages;
+            }
+            break;
 
+            case CHAT_MODE_GOTENNA_UBIQUITY:
+                for (int i = 0; i < mNodesUbiquity.size(); i++) {
+                    MeshNode node = mNodesUbiquity.get(i);
+                    if (gid.compareTo(node.ID) == 0)
+                        return node.messages;
+                }
+                break;
+        }
         return null;
     }
 
@@ -655,7 +674,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         2 Lng
         3 ID (matrix or goTenna)
         4 displayedName
-        5 networkType (U - ubiquity; G - goTenna)
+        5 networkType (U - ubiquity; G - goTenna (przez bramkę); M - pojazd MPDIT)
         */
 
 
@@ -693,8 +712,29 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
             }
         }
 
+        if(s[5].compareTo("M") == 0) {
+            // MPDIT pojazd
+            String id = s[3];
+            int i = 0;
+
+            // sprawdzamy czy to MPDIT
+            boolean dataFromMpdit = false;
+            for (i = 0; i < mNodesMpdit.size(); i++) {
+                if (id.compareTo(mNodesMpdit.get(i).ID) == 0) {
+                    dataFromMpdit = true;
+                    mNodesMpdit.get(i).data = data;
+                    mNodesMpdit.get(i).lat = Double.valueOf(s[1]);
+                    mNodesMpdit.get(i).lng = Double.valueOf(s[2]);
+                    mNodesMpdit.get(i).name = s[4];
+                    mNodesMpdit.get(i).visibleOnMap = true;
+                }
+            }
+        }
+
+
         if(s[5].compareTo("G") == 0)
         {
+            mGatewayIP = ip;
             // GOTENNA
             String id = s[3];
             int i = 0;
@@ -821,7 +861,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
             // wysylamy dane przez siec goTenna do wszystkich uzytkownikow
             if(System.currentTimeMillis() - startTimeGoTenna > mGoTennaBroadcastDelay*1000) {
                 startTimeGoTenna = System.currentTimeMillis();
-                if(isGotennaConected())
+                if(isGotennaConnected())
                     goTennaSendGPS();
             }
 
@@ -858,12 +898,14 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
 
                     if(header.compareTo("GPS") == 0) {
                         // nowe dane GPS, dodajemy dane do tablic
+                        // adres IP bramki aktualizujemy jezli sa to dane z sieci gotenna (NetworkType: 'G')
                         AddOrModifyMeshNodeGpsDataFromUdp(data,ip);
                     }
 
                     if(header.compareTo("TXT") == 0) {
-                        // wiadomosc tekstowa, dodajemy dane do tabli
+                        // wiadomosc tekstowa, dodajemy dane do tabeli
                         // tutaj dostajemy od bramki GateWayMPDIT wiadomości od sieci MESH goTenna
+                        mGatewayIP = ip;
                         AddOrModifyMeshNodeTxtDataFromUdp(data,ip);
                     }
 
@@ -1060,17 +1102,81 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         mNodesGotenna.add(node);
     }
 
-    public void goTennaSetChatUser(String id, String name) {
+    public void goTennaSetChatUser(String id, String name, int mode) {
         mGotennaChatUserGID = id;
         mGotennaChatUserName = name;
+        mGotennaChatUserMode = mode;
     }
 
-    public boolean isGotennaConected() {
+    public boolean isGotennaConnected() {
         if(null == gtConnectionManager)     return false;
         return gtConnectionManager.isConnected();
     }
 
+    private void goTennaIncominMessageGPSfromGateway(GoTennaMessage incomingMessage) {
+        // parsujemy wiadomosc
+        String data = incomingMessage.text.substring(3);
+        String[] s = data.split("\t");
+
+        MeshNode sender = null;
+        String ip = s[2];
+        String name = s[3];
+
+        int n = -1;
+        for(int i = 0 ; i < mNodesUbiquity.size(); i++ ) {
+            MeshNode node = mNodesUbiquity.get(i);
+            if (ip.compareTo(node.IP) == 0) {
+                n = i;
+                sender = node;
+                break;
+            }
+        }
+
+        if(null == sender) {
+            MeshNode node = new MeshNode();
+            node.name = name;
+            node.ID = "?";
+            node.lat = 52.20;
+            node.lng = 21.05;
+            node.IP = ip;
+            node.data = "?";
+            mNodesUbiquity.add(node);
+            sender = node;
+        }
+
+        sender.visibleOnMap = true;
+
+        /*
+        w paczce przesyłamy:
+        0 Lat
+        1 Lng
+        */
+
+        try {
+            sender.lat = Double.parseDouble(s[0]);
+        } catch (Exception e) {}
+
+        try {
+            sender.lng = Double.parseDouble(s[1]);
+        } catch (Exception e) {}
+
+
+    }
+
     private void goTennaIncominMessageGPS(GoTennaMessage incomingMessage) {
+
+        // parsujemy wiadomosc
+        String data = incomingMessage.text.substring(3);
+        String[] s = data.split("\t");
+        if(s.length < 2)    return;
+
+        if(s.length > 2)
+        {
+            // paczka z Ubiquity przesłąna przez bramkę
+            goTennaIncominMessageGPSfromGateway(incomingMessage);
+            return;
+        }
+
         MeshNode sender = null;
         String gid = Long.toString(incomingMessage.getSenderGID());
         int n = -1;
@@ -1097,13 +1203,9 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         }
 
         sender.visibleOnMap = true;
-        sender.data = incomingMessage.text;
-        // parsujemy wiadomosc
-        // TO DO !!!
+        //sender.data = incomingMessage.text;
 
-        String data = incomingMessage.text.substring(3);
-        String[] s = data.split("\t");
-        if(s.length < 2)    return;
+
         /*
         w paczce przesyłamy:
         0 Lat
@@ -1160,6 +1262,53 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         if (goTennaMessageListener != null)     goTennaMessageListener.onIncomingMessage(sender.name,incomingMessage.text.substring(3));
     }
 
+
+    private void goTennaIncominMessageTextByGateway(GoTennaMessage incomingMessage) {
+        MeshNode sender = null;
+        incomingMessage.fromHost = false;
+        Date currentTime = Calendar.getInstance().getTime();
+        incomingMessage.time = currentTime.toString();
+
+        // analizujemy wiadomosc po odcieciu naglowka
+        String m = incomingMessage.text.substring(3);
+        String[] tab = m.split("\t");
+        String IP = tab[0];
+        String name = tab[1];
+        String messageTekst = tab[2];
+
+        incomingMessage.text = "GTW"+messageTekst;
+
+        String gid = Long.toString(incomingMessage.getSenderGID());
+        int n = -1;
+        for(int i = 0 ; i < mNodesUbiquity.size(); i++ ) {
+            MeshNode node = mNodesUbiquity.get(i);
+            if (IP.compareTo(node.IP) == 0) {
+                n = i;
+                sender = node;
+                break;
+            }
+        }
+
+        if(null == sender) {
+            MeshNode node = new MeshNode();
+            node.name = name;
+            node.ID = gid;
+            node.lat = 52.20;
+            node.lng = 21.05;
+            node.IP = IP;
+            node.data = "?";
+            node.visibleOnMap = false;
+            mNodesUbiquity.add(node);
+
+            sender = node;
+            n = mNodesUbiquity.size() - 1;
+        }
+
+        sender.messages.add(incomingMessage);
+
+        if (goTennaMessageListener != null)     goTennaMessageListener.onIncomingMessage(sender.name,messageTekst);
+    }
+
     @Override
     public void onIncomingMessage(GoTennaMessage incomingMessage) {
 
@@ -1178,6 +1327,12 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
             return;
         }
 
+        if(header.compareTo("GTW") == 0) {
+            goTennaIncominMessageTextByGateway(incomingMessage);
+            return;
+        }
+
+
         if(header.compareTo("GPS") == 0) {
             goTennaIncominMessageGPS(incomingMessage);
             return;
@@ -1194,20 +1349,35 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         Date currentTime = Calendar.getInstance().getTime();
 
 
-        if(!isGotennaConected()) {
+        // BRAMKA GOTENNA
+        // przysałnie przez bramkę gotenna wiadomości do uzytkownika ubiquity
+        if(CHAT_MODE_GOTENNA == mGotennaChatUserMode)
+            if(isGotennaConnected()) {
+                // TO DO !!!
+
+            return;
+        }
+
+
+        // BRAMKA UDP
+        // przesyłanie do użytkownika gotenna wiadmości
+        if(!isGotennaConnected()) {
             GoTennaMessage messageToSend = GoTennaMessage.createReadyToSendMessage( mGoTennaGID,
                     Long.parseLong(gid),
                     messageText);
             messageToSend.time = currentTime.toString();
             messageToSend.messageID = mLastGotennaMessageIdSentByGateway;
-            // formatowanie TXT \t GID \t MESSAGE_ID \t MESSAGE_TEXT
-            messageToSend.text = String.format("TXT\t%d\t%d\t%s",gid,messageToSend.messageID,messageText);
+            // formatowanie TXT \t GID \t SENDER_NAME \t MESSAGE_ID \t MESSAGE_TEXT
+            messageToSend.text = String.format("TXT\t%d\t%s\t%d\t%s",gid,mDisplayedName,messageToSend.messageID,messageText);
             mGoTennaMessagesToSendByGateway.add(messageToSend);
             mLastGotennaMessageIdSentByGateway++;
 
             return;
         }
 
+
+        // BEZPOSREDNIO - bez bramki
+        // przesyłanie bezposrednio wiadomości do uzytkownika gotenna (z pominięciem bramki)
         if(null == mGotennaSendMessageInteractor) return;
 
         for(int i = 0 ; i < mNodesGotenna.size(); i++ ) {
