@@ -9,6 +9,7 @@ import threading
 import json
 import asyncio
 import socket
+import time
 from gatewaystorage import GatewayStorage 
 
 try:
@@ -24,6 +25,14 @@ AUTO_ADVERTIZE_PER_MIN = 5
 _MODULE_LOGGER = logging.getLogger(__name__)
 
 
+class MeshNode:
+    _GID = "?"
+    _matrixID = "?"
+    _IP = "?"
+    _name = "?"
+    _timeOfLastMessegeSent = 0
+    _timeOfLastGpsDataReceived = 0
+
 class Gateway:
     # pylint: enable=line-too-long
     """ A gateway module that lives halfway between a goTenna driver and an external communications module.
@@ -32,60 +41,12 @@ class Gateway:
     """
     # pylint: disable=line-too-long
     _logger = _MODULE_LOGGER.getChild('Gateway')
-
-    def _handle_message_to_forward(self, message):
-        # pylint: disable=line-too-long
-        """ This function is called when a message to forward is received.
-
-        It should forward the message to the external network; here it simply prints the message.
-        """
-        #  pylint: enable=line-too-long
-        if message.destination.gid_val not in self._storage.get(['external_contacts']).keys():
-            self._logger.warning("External destination {} is not known"
-                                 .format(message.destination))
-        print("message to forward: {}".format(str(message)))
-        # Since our "external endpoint" is really just printing the message,
-        # we’ll send back an acknowledgement from here. In a real gateway system,
-        # this acknowledgement message should be sent by whatever the external
-        # recipient of the message is.
+    _gotennaNodes = []
+    _ubiquityNodes = []
 
 
-    def _handle_incoming_gotenna_message(self, evt):
-        # All messages we receive serve to register the sender
-        if evt.message.message_type == goTenna.constants.MESSAGE_TYPES['private']\
-           and evt.message.payload.sender not in self._storage.get(['registered_gids']):
-            self._storage.get(['registered_gids']).append(evt.message.payload.sender)
-            self._logger.info("Registered GID {}".format(evt.message.payload.sender))
-        if evt.message.destination.via_gateway == self._driver.gid:
-            self._handle_message_to_forward(evt.message)
-        else:
-            self._logger.info("Incoming message: {}".format(evt.message))
 
-    def _handle_connect(self, evt):
-        if self._advertise_timer:
-            self._logger.warning("Connected with advertise timer active - may be running multiple driver instances")
-            self._advertise_timer.cancel()
-            self._advertise_timer = None
-        self.begin_auto_advertise(self._advertise_pacing)
-        self._logger.info("Connected to device {}".format(evt.device_details))
-
-    def _handle_disconnect(self, evt):
-        self._logger.info("Device disconnected")
-        self.end_auto_advertise()
-
-    _EVENT_HANDLERS = {
-        goTenna.driver.Event.MESSAGE: _handle_incoming_gotenna_message,
-        goTenna.driver.Event.CONNECT: _handle_connect,
-        goTenna.driver.Event.DISCONNECT: _handle_disconnect,
-        goTenna.driver.Event.STATUS: None
-    }
-
-    def gotenna_event_callback(self, event):
-        #print("next event from gotenna")
-        handler = self._EVENT_HANDLERS.get(event.event_type,
-                                           lambda s, e: s._logger.info(str(e)))
-        self._logger.debug(event)
-        if handler: handler(self, event)
+   
 
     def __init__(self, gotenna_sdk_token,
                  advertise_pacing=datetime.timedelta(minutes=AUTO_ADVERTIZE_PER_MIN)):
@@ -109,6 +70,24 @@ class Gateway:
 
         print(settings_dict)
 
+        if 'sdk_token' in settings_dict:
+            self.SDK_TOKEN = str(settings_dict['sdk_token'])
+        else:
+            logger.info('ERROR: missing SDK TOKEN in json config file !!!')
+            self.SDK_TOKEN = "lack_of_token"
+        
+        self.portUDP = 6666
+        if 'port' in settings_dict:
+            self.portUDP = int(settings_dict['port'])
+
+        self.GID = int(9999)
+        if 'gid' in settings_dict:
+            self.GID = int(settings_dict['gid'])
+
+        self.host_ip_address = "127.0.0.1"
+
+        #goTenna.settings.GID.PRIVATE
+
         # pylint: enable=line-too-long
         self._storage = GatewayStorage(gotenna_sdk_token)
         if 'mesh' in settings_dict:
@@ -117,7 +96,7 @@ class Gateway:
         #settings=goTenna.settings.GoTennaSettings(rf_settings=rf_settings, geo_settings=geo_settings)
         settings = goTenna.settings.GoTennaSettings(rf_settings, geo_settings)
         self._driver = goTenna.driver.Driver(gotenna_sdk_token,
-                                             goTenna.settings.GID.gateway(),
+                                             goTenna.settings.GID(self.GID,goTenna.settings.GID.PRIVATE),#goTenna.settings.GID.gateway(),
                                              settings, self.gotenna_event_callback,
                                              shortname='MPDIT',
                                              storage=self._storage, 
@@ -336,15 +315,203 @@ class Gateway:
         self._handle_disconnect(None)
         sys.exit(1)
     
-    def connection_made(self, transport):
-        self.transport = transport
-        print('connection made')
+############################################################################################################
+#
+#                   G O T E N N A
+#
+############################################################################################################
+    
+    def _handle_message_to_forward(self, message):
+        # pylint: disable=line-too-long
+        """ This function is called when a message to forward is received.
 
+        It should forward the message to the external network; here it simply prints the message.
+        """
+        #  pylint: enable=line-too-long
+        gid = message.payload.sender.gid_val
+        text = message.payload.message[3:]
+        #print(f"GID: {gid}")
+        #print(f"Message: {text}")
+
+        header = message.payload.message[:3]
+
+        if("TXT" == header):
+            print(f"text message {text} from {gid}")
+            # tą wiadomość trzeba przekierować do konsoli MPDIT
+            # TO DO !!! 
+
+        if("GPS" == header):
+            print(f"GPS data {text} from {gid}")
+            # te dane trzeba przekazać do wszystkich przez UDP
+            # TO DO !!!
+            tab = text.split("\t")
+            lat = tab[0]
+            lng = tab[1]
+            name = "?"
+            m = f"GPS\t{lat}\t{lng}\t{gid}\t{name}\tU"
+            print(m)
+            for u in self._ubiquityNodes:
+                self.udpTransport.sendto(bytes(m, "utf-8"), (u._IP, self.portUDP))
+
+        if("GTW" == header):
+            print(f"gateway message {text} from {gid}")
+            # tą wiadomość trzeba przekazać do wybranego odbiorcy przez UDP
+            ip = tab[0]
+            sender_name = tab[1]
+            message_text = tab[2]
+            message_id = 0 
+            m = f"TXT\t{gid}\t{sender_name}\t{message_id}\t{message_text}"
+            self.udpTransport.sendto(bytes(m, "utf-8"), (ip, self.portUDP))
+            # TO DO !!!
+
+
+        
+        #if message.destination.gid_val not in self._storage.get(['external_contacts']).keys():
+        #    self._logger.warning("External destination {} is not known"
+        #                         .format(message.destination))
+        #print("message to forward: {}".format(str(message)))
+        # Since our "external endpoint" is really just printing the message,
+        # we’ll send back an acknowledgement from here. In a real gateway system,
+        # this acknowledgement message should be sent by whatever the external
+        # recipient of the message is.
+
+    def _handle_connect(self, evt):
+        if self._advertise_timer:
+            self._logger.warning("Connected with advertise timer active - may be running multiple driver instances")
+            self._advertise_timer.cancel()
+            self._advertise_timer = None
+        self.begin_auto_advertise(self._advertise_pacing)
+        self._logger.info("Connected to device {}".format(evt.device_details))
+
+    def _handle_disconnect(self, evt):
+        self._logger.info("Device disconnected")
+        self.end_auto_advertise()
+    
+    
+
+
+    def _handle_incoming_gotenna_message(self, evt):
+        knownNode = 0
+        gid = evt.message.payload.sender
+        for n in self._gotennaNodes:
+            if(gid.gid_val == n._GID.gid_val):
+                knownNode = 1
+
+        if(knownNode==0):
+            node = MeshNode()
+            node._GID = gid
+            self._gotennaNodes.append(node)
+
+        # All messages we receive serve to register the sender
+        if evt.message.message_type == goTenna.constants.MESSAGE_TYPES['private']\
+           and evt.message.payload.sender not in self._storage.get(['registered_gids']):
+            self._storage.get(['registered_gids']).append(evt.message.payload.sender)
+            self._logger.info("Registered GID {}".format(evt.message.payload.sender))
+        
+        self._logger.info("Incoming message: {}".format(evt.message))
+        self._handle_message_to_forward(evt.message)
+        
+        
+        #if evt.message.destination.via_gateway == self._driver.gid:
+        #    self._handle_message_to_forward(evt.message)
+        #else:
+        #    self._logger.info("Incoming message: {}".format(evt.message))
+
+    _EVENT_HANDLERS = {
+        goTenna.driver.Event.MESSAGE: _handle_incoming_gotenna_message,
+        goTenna.driver.Event.CONNECT: _handle_connect,
+        goTenna.driver.Event.DISCONNECT: _handle_disconnect,
+        goTenna.driver.Event.STATUS: None
+    }
+
+    def gotenna_event_callback(self, event):
+        #print("next event from gotenna")
+        handler = self._EVENT_HANDLERS.get(event.event_type,
+                                           lambda s, e: s._logger.info(str(e)))
+        self._logger.debug(event)
+        if handler: handler(self, event)
+    
+    
+
+############################################################################################################
+#
+#                   U D P
+#
+############################################################################################################
+
+    def connection_made(self, transport):
+        self.udpTransport = transport
+        print('UDP connection made')
+        #broadcast: a message to all should be send to inform them which IP address a gateway has
+        tab = self.host_ip_address.split(".")
+        domain = tab[0] + "." + tab[1] + "." + tab[2] + "."
+        for x in range(256):
+            ip = domain + str(x)
+            #print(ip)
+            self.udpTransport.sendto(bytes("GTW", "utf-8"), (ip, self.portUDP))
+    
     def datagram_received(self, data, addr):
         message = data.decode()
         print('Received %r from %s' % (message, addr))
-        print('Send %r to %s' % (message, addr))
-        #self.transport.sendto(data, addr)
+        #analizujemy pakiet
+        tab = message.split("\t")
+
+        senderName = "?"
+        ip = addr[0]
+        millis = int(round(time.time() * 1000))
+
+        #dodajemy do tablicy informacje o wezle
+        knownNode = 0
+        node = MeshNode()
+        node._IP = ip
+        node._timeOfLastGpsDataReceived = 0
+            
+        for n in self._ubiquityNodes:
+            if(ip == n._IP):
+                knownNode = 1
+                node = n
+
+        if(knownNode==0):
+            self._ubiquityNodes.append(node) 
+
+        # 1. wiadmość tekstowa do przekazania do sieci goTenna
+        # formatowanie: TXT \t GID \t SENDER_NAME \t MESSAGE_ID \t MESSAGE_TEXT
+        #   TO DO !!!
+        if(tab[0] == "TXT"): 
+            gid = tab[1]
+            senderName = tab[2]
+            #messageID = tab[3]
+            text = tab[4]
+            message = f"GTW{ip}\t{senderName}\t{text}"
+            payload = goTenna.payload.TextPayload(message)
+            #forward_private(self, payload, from_external, destination)
+            self.forward_private(payload,gid,gid)
+           
+
+        # 2. dane GPS do przekazania do sieci goTenna
+        # formatowanie: GPS \t LAT \t LNG \t ID \t NAME \t NETWORK_TYPE
+        # ID - matrix ID
+        #   TO DO !!!
+        if(tab[0] == "GPS"): 
+            lat = tab[1]
+            lng = tab[2]
+            #id = tab[3]
+            senderName = tab[4]
+            # sprawdzamy jaki czas minął od ostatniego pakietu GPS z tego adresu IP
+            # jezeli jest dłuższy od 60s to wysyłamy dane do goTenna
+            message = "GPS" + lat + "\t" + lng + "\t" + ip + "\t" + senderName
+            payload = goTenna.payload.TextPayload(message)
+            if(millis - node._timeOfLastGpsDataReceived > 60000): 
+                # petla po wszystkich wezłach goTenna
+                for g in self._gotennaNodes:
+                    self.forward_private(payload,g._GID,g._GID)
+                node._timeOfLastGpsDataReceived = millis
+            
+
+        
+
+        #print('Send %r to %s' % (message, addr))
+        #self.udpTransport.sendto(data, addr)
 
 
 
@@ -370,9 +537,12 @@ async def interact():
     hostname = socket.gethostname()
     ## getting the IP address using socket.gethostbyname() method
     ip_address = socket.gethostbyname(hostname)
+    gateway.host_ip_address = ip_address
     ## printing the hostname and ip_address
     print(f"Hostname: {hostname}")
     print(f"IP Address: {ip_address}")
+
+    print(f"UDP port: {gateway.portUDP}")
 
     # Get a reference to the event loop as we plan to use
     # low-level APIs.
@@ -383,7 +553,9 @@ async def interact():
     # client requests.
     transport, protocol = await loop.create_datagram_endpoint(
         lambda: gateway,
-        local_addr=(ip_address, 9999))
+        local_addr=(ip_address, 6666))
+
+    #gateway.udpProtocol = protocol
 
     try:
         await asyncio.sleep(3600)  # Serve for 1 hour.

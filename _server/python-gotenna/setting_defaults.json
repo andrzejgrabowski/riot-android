@@ -1,13 +1,14 @@
 {
     "sdk_token":    "RgIJCQMNEEQVQxlBUAsbHxwBQldHUlgDB0NSAxdRHx4LAwtZRFgLVw4DR1gcXgQE",
-    "gid":    "999",
+    "gid":    "9999",
+    "port":    "6666",
     "pro":
     {
         "rf_settings":
         {
             "power_enum": 0,
-            "control_freqs": [150000000],
-            "data_freqs": [151000000],
+            "control_freqs": [142000000,143000000,144000000],
+            "data_freqs": [145000000,146000000,147000000,148000000,149000000,150000000,151000000,152000000,153000000,154000000,155000000,156000000,157000000],
             "bandwidth": 11.8
         },
         "___spi_settings":
