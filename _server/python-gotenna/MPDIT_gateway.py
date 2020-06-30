@@ -7,6 +7,9 @@ import sys
 import datetime
 import threading
 import json
+import asyncio
+import socket
+from gatewaystorage import GatewayStorage 
 
 try:
     import goTenna
@@ -20,88 +23,6 @@ AUTO_ADVERTIZE_PER_MIN = 5
 
 _MODULE_LOGGER = logging.getLogger(__name__)
 
-class GatewayStorage(goTenna.storage.EncryptedFileStorage):
-    """ A storage implementation that lets us store our own data alongside the goTenna SDK"""
-    def  __init__(self, gotenna_sdk_token):
-        """ Initialize the storage.
-
-        :param bytes gotenna_sdk_token: The token for the goTenna SDK.
-        """
-        goTenna.storage.EncryptedFileStorage.__init__(self, gotenna_sdk_token)
-
-    def set(self, sparse_dict):
-        # pylint: disable=line-too-long
-        """ Add information to the storage (or overwrite it if present)
-
-        :param dict sparse_dict: A dict that will be added to the internal storage, overwriting everything in its key path if already present
-        """
-        # pylint: enable=line-too-long
-        def _merge(overwrite_with, to_overwrite):
-            for key in overwrite_with:
-                if key in to_overwrite\
-                   and  isinstance(to_overwrite[key], dict)\
-                   and isinstance(overwrite_with[key], dict):
-                    _merge(overwrite_with[key], to_overwrite[key])
-                else:
-                    to_overwrite[key] = overwrite_with[key]
-        _merge(sparse_dict,  self._cache)
-
-    def get(self, key_path):
-        # pylint: disable=line-too-long
-        """ Get the results of an arbitrarily long key path
-
-        :param list[str] key_path: A list of keys to traverse in the internal dict. For instance, if the internal dict looks like {'foo': {'bar': 'baz'}}, get(['foo', 'bar']) returns 'baz'.
-        :raises KeyError: If ``key_path`` is not in the dict
-        """
-        # pylint: enable=line-too-long
-        if not key_path:
-            return self._cache
-        def _traverse(key_path, data):
-            if len(key_path) == 1:
-                # base case: we found our key
-                return data[key_path[0]]
-            else:
-                return  _traverse(key_path[1:], data[key_path[0]])
-        return _traverse(key_path, self._cache)
-
-    def remove(self, key_path):
-        # pylint: disable=line-too-long
-        """ Remove the results of an arbitrarily long key path
-
-        :param list[str] key_path: A list of keys to traverse in the internal path. The leaf node will be deleted. For instance, if the internal dict looks like {'foo': {'bar': 'baz', 'qwx': 'bwz}} and ``key_path`` is ``['foo', 'bar']`` the dict will become ``{'foo': {'bar': 'baz'}}``.
-        :raises KeyError: If the ``key_path`` cannot be matched.
-        """
-        # pylint: enable=line-too-long
-        if not key_path:
-            return
-        def _traverse(key_path, data):
-            if len(key_path) == 1:
-                del data[key_path[0]]
-            else:
-                _traverse(key_path[1:], data[key_path[0]])
-        _traverse(key_path, self._cache)
-
-    def load(self, gid):
-        vals = goTenna.storage.EncryptedFileStorage.load(self, gid)
-        self._cache['external_contacts']\
-            = {int(ec): ed for ec, ed
-               in self._cache.get('external_contacts_ser', {}).items()}
-        self._cache['registered_gids']\
-            = [goTenna.settings.GID(int(rg),
-                                    goTenna.settings.GID.PRIVATE)
-               for rg in self._cache.get('registered_gids_ser', [])]
-        return vals
-
-    def store(self):
-        old_ec = self._cache.pop('external_contacts')
-        self._cache['external_contacts_ser']\
-            = {str(ec): ed for ec, ed in old_ec.items()}
-        old_rg = self._cache.pop('registered_gids')
-        self._cache['registered_gids_ser']\
-            = [rg.gid_val for rg in old_rg]
-        goTenna.storage.EncryptedFileStorage.store(self)
-        self._cache['external_contacts'] = old_ec
-        self._cache['registered_gids'] = old_rg
 
 class Gateway:
     # pylint: enable=line-too-long
@@ -160,7 +81,7 @@ class Gateway:
     }
 
     def gotenna_event_callback(self, event):
-        print("next event from gotenna")
+        #print("next event from gotenna")
         handler = self._EVENT_HANDLERS.get(event.event_type,
                                            lambda s, e: s._logger.info(str(e)))
         self._logger.debug(event)
@@ -414,8 +335,23 @@ class Gateway:
     def exit(self):
         self._handle_disconnect(None)
         sys.exit(1)
+    
+    def connection_made(self, transport):
+        self.transport = transport
+        print('connection made')
 
-def interact():
+    def datagram_received(self, data, addr):
+        message = data.decode()
+        print('Received %r from %s' % (message, addr))
+        print('Send %r to %s' % (message, addr))
+        #self.transport.sendto(data, addr)
+
+
+
+
+
+
+async def interact():
     """ Main interactable function called when executed as a script"""
     import argparse
     import six
@@ -424,13 +360,36 @@ def interact():
     #parser.add_argument('SDK_TOKEN', type=six.b, help='The token for the goTenna SDK')
     #args = parser.parse_args()
     sdk_token = "RgIJCQMNEEQVQxlBUAsbHxwBQldHUlgDB0NSAxdRHx4LAwtZRFgLVw4DR1gcXgQE"
-    g = Gateway(sdk_token)
+    gateway = Gateway(sdk_token)
     logging.basicConfig(level=logging.INFO)
-    code.interact(banner='goTenna Gateway',
-                  local={'g': g,
-                         'goTenna': goTenna, 
-                         'd': g._driver})
+    #code.interact(banner='goTenna Gateway', local={'g': g, 'goTenna': goTenna, 'd': g._driver})
+    # w zamkniętej pętli przetwarzamy komunikaty UDP
 
+    print("Starting UDP server")
+    ## getting the hostname by socket.gethostname() method
+    hostname = socket.gethostname()
+    ## getting the IP address using socket.gethostbyname() method
+    ip_address = socket.gethostbyname(hostname)
+    ## printing the hostname and ip_address
+    print(f"Hostname: {hostname}")
+    print(f"IP Address: {ip_address}")
+
+    # Get a reference to the event loop as we plan to use
+    # low-level APIs.
+    loop = asyncio.get_running_loop()
+
+   
+    # One protocol instance will be created to serve all
+    # client requests.
+    transport, protocol = await loop.create_datagram_endpoint(
+        lambda: gateway,
+        local_addr=(ip_address, 9999))
+
+    try:
+        await asyncio.sleep(3600)  # Serve for 1 hour.
+    finally:
+        transport.close()
 
 if __name__ == '__main__':
-    interact()
+    asyncio.run(interact())
+    #interact()
