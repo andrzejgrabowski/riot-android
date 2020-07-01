@@ -17,6 +17,7 @@ package im.vector.fragments;
         import android.widget.Toast;
 
         import im.vector.GoTennaMessage;
+        import im.vector.MeshNode;
         import im.vector.MpditManager;
         import im.vector.R;
         import im.vector.VectorApp;
@@ -111,27 +112,32 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
         public void onBindViewHolder(GotennaMessageViewHolder holder, int position) {
             // - get element from your dataset at this position
             // - replace the contents of the view with that element
+            if (mDataset == null) return;
 
             TextView m = holder.mView.findViewById(R.id.cellMessageTextView);
             TextView time = holder.mView.findViewById(R.id.cellInfoTextView);
             ImageView iv = holder.mView.findViewById(R.id.messageStatusImageView);
             //TextView tvId = holder.mView.findViewById(R.id.gotenna_contact_gid);
             if(position < mDataset.size() && position >= 0) {
+                GoTennaMessage gm = mDataset.get(position);
                 if(m!=null) {
-                    m.setText(mDataset.get(position).text.substring(3));
+                    m.setText(gm.text_only);//text.substring(3));
                     m.setVisibility(View.VISIBLE);
                 }
                 if(time!=null) {
-                    time.setText(mDataset.get(position).time);
+                    String t = gm.time;
+                    if(gm.milisReceived > gm.milisSend)
+                        t += String.format(" ping: %d ms", gm.milisReceived - gm.milisSend);
+                    time.setText(t);
                     time.setVisibility(View.VISIBLE);
                 }
                 if(iv!=null) {
 
                     //time.setVisibility(View.VISIBLE);
 
-                    if (mDataset.get(position).fromHost)
+                    if (gm.fromHost)
                     {
-                        switch (mDataset.get(position).getMessageStatus())
+                        switch (gm.getMessageStatus())
                         {
                             case SENDING:
                                 iv.setImageResource(R.drawable.sending_animation);
@@ -140,7 +146,7 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
                                 break;
                             case SENT_SUCCESSFULLY:
                             {
-                                if (mDataset.get(position).willDisplayAckConfirmation)
+                                if (gm.willDisplayAckConfirmation)
                                 {
                                     iv.setImageResource(R.drawable.ic_success);
                                 }

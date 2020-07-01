@@ -35,12 +35,15 @@ public class GoTennaMessage
     private Date sentDate;
     public String time;
     public String text;
+    public String text_only;
     private MessageStatus messageStatus;
     private String detailInfo;
     private int hopCount;
     public boolean fromHost = true;
     public boolean willDisplayAckConfirmation = true;
     public int messageID;
+    public long milisSend = 0;
+    public long milisReceived = 0;
 
     public enum MessageStatus
     {
@@ -59,8 +62,12 @@ public class GoTennaMessage
         this.receiverGID = receiverGID;
         this.sentDate = sentDate;
         this.text = text;
+        this.text_only = text;
         this.messageStatus = messageStatus;
         this.detailInfo = detailInfo;
+
+        this.milisSend = System.currentTimeMillis();
+        this.milisReceived = this.milisSend;
     }
 
     //==============================================================================================
