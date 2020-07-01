@@ -290,6 +290,7 @@ class Gateway:
         self._storage.store()
 
     def forward_private(self, payload, from_external, destination):
+        print(f"GoTenna send message: {payload.message} to {destination.gid_val}")
         # pylint: disable=line-too-long
         """ Forward a message from the external network to a private message on the goTenna network.
 
@@ -334,6 +335,7 @@ class Gateway:
         #print(f"Message: {text}")
 
         header = message.payload.message[:3]
+        tab = text.split("\t")
 
         if("TXT" == header):
             print(f"text message {text} from {gid}")
@@ -343,12 +345,10 @@ class Gateway:
         if("GPS" == header):
             print(f"GPS data {text} from {gid}")
             # te dane trzeba przekazać do wszystkich przez UDP
-            # TO DO !!!
-            tab = text.split("\t")
             lat = tab[0]
             lng = tab[1]
-            name = "?"
-            m = f"GPS\t{lat}\t{lng}\t{gid}\t{name}\tU"
+            name = tab[2]
+            m = f"GPS\t{lat}\t{lng}\t{gid}\t{name}\tG"
             print(m)
             for u in self._ubiquityNodes:
                 self.udpTransport.sendto(bytes(m, "utf-8"), (u._IP, self.portUDP))
@@ -452,12 +452,17 @@ class Gateway:
     
     def datagram_received(self, data, addr):
         message = data.decode()
-        print('Received %r from %s' % (message, addr))
+        print('UDP Received %r from %s' % (message, addr))
         #analizujemy pakiet
+        ip = addr[0]
+        if(ip == self.host_ip_address):
+            print("mesage from myself :) ")
+            return
+        
         tab = message.split("\t")
 
-        senderName = "?"
-        ip = addr[0]
+        senderName = "???"
+        
         millis = int(round(time.time() * 1000))
 
         #dodajemy do tablicy informacje o wezle
@@ -478,7 +483,7 @@ class Gateway:
         # formatowanie: TXT \t GID \t SENDER_NAME \t MESSAGE_ID \t MESSAGE_TEXT
         #   TO DO !!!
         if(tab[0] == "TXT"): 
-            gid = tab[1]
+            gid = goTenna.settings.GID(int(tab[1]),goTenna.settings.GID.PRIVATE)
             senderName = tab[2]
             #messageID = tab[3]
             text = tab[4]
@@ -558,7 +563,7 @@ async def interact():
     #gateway.udpProtocol = protocol
 
     try:
-        await asyncio.sleep(3600)  # Serve for 1 hour.
+        await asyncio.sleep(24*3600)  # Serve for 1 hour.
     finally:
         transport.close()
 
