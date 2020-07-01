@@ -49,7 +49,11 @@ import im.vector.fragments.MpditGotennaAddUserFragment;
 import im.vector.util.RoomUtils;
 import im.vector.util.VectorUtils;
 
-public class HomeGotennaAdapter extends RecyclerView.Adapter<HomeGotennaAdapter.GotennaViewHolder> {//AbsFilterableAdapter<RoomViewHolder> {
+public class HomeGotennaAdapter extends RecyclerView.Adapter<HomeGotennaAdapter.GotennaViewHolder> implements MpditManager.NodesListener {
+    @Override
+    public void onNodesCountChanged() {
+        notifyDataSetChanged();
+    }//AbsFilterableAdapter<RoomViewHolder> {
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -98,6 +102,8 @@ public class HomeGotennaAdapter extends RecyclerView.Adapter<HomeGotennaAdapter.
 
         MpditManager mpdit = getMpditManager();
         if(null != mpdit) {
+            mpdit.mNodesListener = this;
+
             if(MpditManager.CHAT_MODE_GOTENNA == mMode)
                 mGotennas = mpdit.getGotennaNodes();// + mpdit.getMpditNodes();
             if(MpditManager.CHAT_MODE_GOTENNA_UBIQUITY == mMode)
@@ -137,13 +143,19 @@ public class HomeGotennaAdapter extends RecyclerView.Adapter<HomeGotennaAdapter.
                 }
                 if(tvId!=null)    {
                     tvId.setVisibility(View.VISIBLE);
-                    tvId.setText(node.ID);
+                    if(MpditManager.CHAT_MODE_GOTENNA == mMode)
+                        tvId.setText(node.ID);
+                    if(MpditManager.CHAT_MODE_GOTENNA_UBIQUITY == mMode)
+                        tvId.setText(node.IP);
                     tvId.setTypeface(null, Typeface.ITALIC);
                 }
                 ImageView iv = viewHolder.mView.findViewById(R.id.room_avatar);
                 if(tvId!=null) {
                     iv.setVisibility(View.VISIBLE);
-                    VectorUtils.setDefaultMemberAvatar(iv, node.ID, node.name);
+                    if(MpditManager.CHAT_MODE_GOTENNA == mMode)
+                        VectorUtils.setDefaultMemberAvatar(iv, node.ID, node.name);
+                    if(MpditManager.CHAT_MODE_GOTENNA_UBIQUITY == mMode)
+                        VectorUtils.setDefaultMemberAvatar(iv, node.IP, node.name);
                 }
             }
 

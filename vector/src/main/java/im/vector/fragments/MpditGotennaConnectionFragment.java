@@ -33,6 +33,27 @@ public class MpditGotennaConnectionFragment extends VectorBaseFragment implement
         return null;
     }
 
+
+    @Override
+    public void onDetach()
+    {
+        super.onDetach();
+        MpditManager mpdit = getMpditManager();
+        if(mpdit != null)
+            mpdit.goTennaTechnicalMessageListener = null;
+    }
+
+
+
+    @Override
+    public void onDestroyView()
+    {
+        super.onDestroyView();
+        MpditManager mpdit = getMpditManager();
+        if(mpdit != null)
+            mpdit.goTennaTechnicalMessageListener = null;
+    }
+
     @Override
     public int getLayoutResId() {
         return R.layout.fragment_mpdit_gotenna_connection;

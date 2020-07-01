@@ -21,8 +21,14 @@
             android:summary="brak"
             android:title="Numer identyfikacyjny pojazdu MPDIT (goTenna GID)" />
 
+        <im.vector.preference.VectorSwitchPreference
+            android:key="GOTENNA_SETTINGS_AUTOCONNECT_PREFERENCE_KEY"
+            android:title="automatyczne łaczenie po uruchomieniu aplikacji" />
+
     </im.vector.preference.VectorPreferenceCategory>
 
+
+    <im.vector.preference.VectorPreferenceDivider />
 
 
     <im.vector.preference.VectorPreferenceCategory

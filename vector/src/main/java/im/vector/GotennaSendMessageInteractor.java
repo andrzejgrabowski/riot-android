@@ -144,6 +144,7 @@ public class GotennaSendMessageInteractor
 
     private void sendMessage(final SendMessageItem sendMessageItem)
     {
+        sendMessageItem.message.milisSend = System.currentTimeMillis();
         gtCommandCenter.sendMessage(sendMessageItem.message.toBytes(), sendMessageItem.message.getReceiverGID(), new GTSendCommandResponseListener()
         {
             @Override
@@ -159,6 +160,7 @@ public class GotennaSendMessageInteractor
                 if (response.getResponseCode() == GTResponse.GTCommandResponseCode.POSITIVE)
                 {
                     sendMessageItem.message.setMessageStatus(GoTennaMessage.MessageStatus.SENT_SUCCESSFULLY);
+                    sendMessageItem.message.milisReceived = System.currentTimeMillis();
                     sendMessageItem.sendMessageListener.onMessageResponseReceived();
                 }
                 else

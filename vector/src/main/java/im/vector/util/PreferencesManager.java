@@ -49,6 +49,9 @@ import im.vector.ui.themes.ThemeUtils;
 public class PreferencesManager {
 
     // goTenna
+
+    public static final String GOTENNA_SETTINGS_AUTOCONNECT_PREFERENCE_KEY = "GOTENNA_SETTINGS_AUTOCONNECT_PREFERENCE_KEY";
+
     public static final String GOTENNA_SETTINGS_NAME_PREFERENCE_KEY = "GOTENNA_SETTINGS_NAME_PREFERENCE_KEY";
     public static final String GOTENNA_SETTINGS_GID_PREFERENCE_KEY = "GOTENNA_SETTINGS_GID_PREFERENCE_KEY";
     public static final String GOTENNA_SETTINGS_MPDIT_PREFERENCE_KEY = "GOTENNA_SETTINGS_MPDIT_PREFERENCE_KEY";
@@ -78,6 +81,16 @@ public class PreferencesManager {
 
     public static final String GOTENNA_NAMES = "GOTENNA_NAMES";
     public static final String GOTENNA_GIDS = "GOTENNA_GIDS";
+
+
+
+    public static boolean goTennaHasPreviousConnection(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean("GOTENNA_HAS_PREVIOUS_CONNECTIONE_KEY", false);
+    }
+
+    public static boolean goTennaAutoConnect(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(GOTENNA_SETTINGS_AUTOCONNECT_PREFERENCE_KEY, false);
+    }
 
     public static String mpditGID(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context).getString(GOTENNA_SETTINGS_MPDIT_PREFERENCE_KEY, "0");

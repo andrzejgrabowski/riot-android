@@ -21,6 +21,7 @@ import android.os.Bundle;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.core.content.ContextCompat;
 import androidx.core.view.GestureDetectorCompat;
@@ -126,6 +127,23 @@ public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnS
             homeSectionView.setCurrentFilter(mCurrentFilter);
         }
         mActivity.showWaitingView();
+
+        // sprawdzamy autoamtyczne łaczenie
+        try{
+            boolean r1 = PreferencesManager.goTennaAutoConnect(getContext());
+            boolean r2 = PreferencesManager.goTennaHasPreviousConnection(getContext());
+            if(r1 && r2) {
+                VectorApp app = VectorApp.getInstance();
+                MpditManager mpdit = null;
+                if (app != null) {
+                    mpdit = app.getMpditManger();
+                    if(null != mpdit)
+                        mpdit.goTennaAutoConnect();
+                }
+
+            }
+
+        } catch(Exception e) {}
     }
 
     @Override
@@ -385,6 +403,7 @@ public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnS
                 if (mpdit != null) {
                     mpdit.goTennaSetChatUser(id, name, mode);
                 }
+                //Toast.makeText(mActivity, id + " - " + name, Toast.LENGTH_SHORT).show();
                 final Intent settingsIntent = new Intent(mActivity, GoTennaChatActivity.class); //VectorHomeActivity.this
                 startActivity(settingsIntent);
             }
