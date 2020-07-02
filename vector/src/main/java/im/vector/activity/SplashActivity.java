@@ -169,19 +169,43 @@ public class SplashActivity extends MXCActionBarActivity {
 
     @Override
     public void initUiAndData() {
+
+
+        Drawable background = animatedLogo.getBackground();
+        if (background instanceof AnimationDrawable) {
+            ((AnimationDrawable) background).start();
+        }
+
+        /*
+        JEŻELI W TYM MIEJSCU URUCHOMIMY ON FINISH TO NIE POJAWIA SIĘ TOAST: "Błąd sieci"
+        if(2 > 1) {
+            onFinish();
+            return;
+        }*/
+
+
         List<MXSession> sessions = Matrix.getInstance(getApplicationContext()).getSessions();
 
         //Toast.makeText(getApplicationContext(), "Splash: initUiAndData: 1: getApplicationContext()", Toast.LENGTH_SHORT).show();
-        goTennaOnlyDialog("initUiAndData: 1");
+        //goTennaOnlyDialog("initUiAndData: 1");
 
         //Toast.makeText(getBaseContext(), "Splash: initUiAndData: 1: getBaseContext()", Toast.LENGTH_SHORT).show();
         //Toast.makeText(this, "Splash: initUiAndData: 1: this", Toast.LENGTH_SHORT).show();
+
+
+
+
+
 
         if (sessions == null) {
             Log.e(LOG_TAG, "onCreate no Sessions");
             finish();
             return;
         }
+
+
+
+
 
         // Check if store is corrupted, due to change of type of some maps from HashMap to Map in Serialized objects
         // Only on Android 7.1+
@@ -200,18 +224,27 @@ public class SplashActivity extends MXCActionBarActivity {
             return;
         }
 
-        Drawable background = animatedLogo.getBackground();
-        if (background instanceof AnimationDrawable) {
-            ((AnimationDrawable) background).start();
-        }
 
-        goTennaOnlyDialog("initUiAndData: 2");
+        /*
+        JEŻELI W TYM MIEJSCU URUCHOMIMY ON FINISH TO NIE POJAWIA SIĘ TOAST: "Błąd sieci"
+        if(2 > 1) {
+            onFinish();
+            return;
+        }*/
+
+
+
+
+
+        //goTennaOnlyDialog("initUiAndData: 2");
 
         // Check the lazy loading status
-        checkLazyLoadingStatus(sessions);
+       checkLazyLoadingStatus(sessions);
 
 
-        goTennaOnlyDialog("initUiAndData: 3");
+        //goTennaOnlyDialog("initUiAndData: 3");
+        // MPDIT GO TENNA: jeżlei tu uruchimy funkcję onFinish to aplikacja się uruchomi
+        //onFinish();
     }
 
     private void checkLazyLoadingStatus(final List<MXSession> sessions) {
@@ -221,42 +254,60 @@ public class SplashActivity extends MXCActionBarActivity {
             // Go to next step
             startEventStreamService(sessions);
         }
+
+        /*
+        JEŻELI W TYM MIEJSCU URUCHOMIMY ON FINISH TO NIE POJAWIA SIĘ TOAST: "Błąd sieci"
+        if(2 > 1) {
+            onFinish();
+            return;
+        }*/
+
+
+        //goTennaOnlyDialog("checkLazyLoadingStatus: 1");
+
         // If LL is already ON, nothing to do
         if (PreferencesManager.useLazyLoading(this)) {
             // Go to next step
+            //goTennaOnlyDialog("checkLazyLoadingStatus: startEventStreamService");
             startEventStreamService(sessions);
         } else {
             // Check that user has not explicitly disabled the lazy loading
+            //goTennaOnlyDialog("checkLazyLoadingStatus: 2");
             if (PreferencesManager.hasUserRefusedLazyLoading(this)) {
                 // Go to next step
+                //goTennaOnlyDialog("checkLazyLoadingStatus: 3");
                 startEventStreamService(sessions);
             } else {
+                //goTennaOnlyDialog("checkLazyLoadingStatus: try to enable LL");
                 // Try to enable LL
                 final MXSession session = sessions.get(0);
 
                 session.canEnableLazyLoading(new ApiCallback<Boolean>() {
                     @Override
                     public void onNetworkError(Exception e) {
+                        goTennaOnlyDialog("checkLazyLoadingStatus: onNetworkError");
                         // Ignore, maybe next time
                         startEventStreamService(sessions);
 
-                        goTennaOnlyDialog("checkLazyLoadingStatus: onNetworkError");
+
                     }
 
                     @Override
                     public void onMatrixError(MatrixError e) {
+                        goTennaOnlyDialog("checkLazyLoadingStatus: onMatrixError");
                         // Ignore, maybe next time
                         startEventStreamService(sessions);
 
-                        goTennaOnlyDialog("checkLazyLoadingStatus: onMatrixError");
+
                     }
 
                     @Override
                     public void onUnexpectedError(Exception e) {
+                        goTennaOnlyDialog("checkLazyLoadingStatus: onUnexpectedError");
                         // Ignore, maybe next time
                         startEventStreamService(sessions);
 
-                        goTennaOnlyDialog("checkLazyLoadingStatus: onUnexpectedError");
+
                     }
 
                     @Override
