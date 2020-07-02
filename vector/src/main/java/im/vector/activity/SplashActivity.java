@@ -17,13 +17,16 @@
  */
 package im.vector.activity;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.widget.ImageView;
+import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.preference.PreferenceManager;
 
 import org.matrix.androidsdk.MXSession;
@@ -140,9 +143,39 @@ public class SplashActivity extends MXCActionBarActivity {
         return R.layout.vector_activity_splash;
     }
 
+    public void goTennaOnlyDialog(String caller) {
+
+        try {
+            new AlertDialog.Builder(this)
+                    .setMessage("Błąd sieci Ubiquity. Czy uruchomić aplikację w trybie połączenia tylko z siecią MESH typu goTenna? \n" + caller)
+                    .setCancelable(false)
+                    .setPositiveButton("Tryb goTenna", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    })
+                    .setNegativeButton("Ponów próbę połączenia", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            //BugReporter.deleteCrashFile(VectorHomeActivity.this);
+                        }
+                    })
+                    .show();
+        } catch (Exception ee) {
+            //Log.e(LOG_TAG, "## onResume() : appCrashedAlert failed " + e.getMessage(), e);
+        }
+    }
+
     @Override
     public void initUiAndData() {
         List<MXSession> sessions = Matrix.getInstance(getApplicationContext()).getSessions();
+
+        //Toast.makeText(getApplicationContext(), "Splash: initUiAndData: 1: getApplicationContext()", Toast.LENGTH_SHORT).show();
+        goTennaOnlyDialog("initUiAndData: 1");
+
+        //Toast.makeText(getBaseContext(), "Splash: initUiAndData: 1: getBaseContext()", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, "Splash: initUiAndData: 1: this", Toast.LENGTH_SHORT).show();
 
         if (sessions == null) {
             Log.e(LOG_TAG, "onCreate no Sessions");
@@ -172,8 +205,13 @@ public class SplashActivity extends MXCActionBarActivity {
             ((AnimationDrawable) background).start();
         }
 
+        goTennaOnlyDialog("initUiAndData: 2");
+
         // Check the lazy loading status
         checkLazyLoadingStatus(sessions);
+
+
+        goTennaOnlyDialog("initUiAndData: 3");
     }
 
     private void checkLazyLoadingStatus(final List<MXSession> sessions) {
@@ -201,18 +239,24 @@ public class SplashActivity extends MXCActionBarActivity {
                     public void onNetworkError(Exception e) {
                         // Ignore, maybe next time
                         startEventStreamService(sessions);
+
+                        goTennaOnlyDialog("checkLazyLoadingStatus: onNetworkError");
                     }
 
                     @Override
                     public void onMatrixError(MatrixError e) {
                         // Ignore, maybe next time
                         startEventStreamService(sessions);
+
+                        goTennaOnlyDialog("checkLazyLoadingStatus: onMatrixError");
                     }
 
                     @Override
                     public void onUnexpectedError(Exception e) {
                         // Ignore, maybe next time
                         startEventStreamService(sessions);
+
+                        goTennaOnlyDialog("checkLazyLoadingStatus: onUnexpectedError");
                     }
 
                     @Override

@@ -175,64 +175,9 @@ public class MpditGotennaConnectionFragment extends VectorBaseFragment implement
         if(mpdit == null)
             return;
 
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getContext());
-
-        String gid = sp.getString(PreferencesManager.GOTENNA_SETTINGS_GID_PREFERENCE_KEY, "999666");
-        String name = sp.getString(PreferencesManager.GOTENNA_SETTINGS_NAME_PREFERENCE_KEY, "999666");
-        String gidMpdit = sp.getString(PreferencesManager.GOTENNA_SETTINGS_MPDIT_PREFERENCE_KEY, "999666");
-
-        String control1 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_CONTROL_CHANNEL_1_PREFERENCE_KEY, "145");
-        String control2 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_CONTROL_CHANNEL_2_PREFERENCE_KEY, "146");
-        String control3 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_CONTROL_CHANNEL_3_PREFERENCE_KEY, "147");
-
-        String data1 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_1_PREFERENCE_KEY, "148");
-        String data2 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_2_PREFERENCE_KEY, "149");
-        String data3 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_3_PREFERENCE_KEY, "151");
-        String data4 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_4_PREFERENCE_KEY, "152");
-        String data5 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_5_PREFERENCE_KEY, "153");
-        String data6 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_6_PREFERENCE_KEY, "154");
-        String data7 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_7_PREFERENCE_KEY, "155");
-        String data8 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_8_PREFERENCE_KEY, "156");
-        String data9 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_9_PREFERENCE_KEY, "157");
-        String data10 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_10_PREFERENCE_KEY, "158");
-        String data11 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_11_PREFERENCE_KEY, "159");
-        String data12 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_12_PREFERENCE_KEY, "160");
-        String data13 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_13_PREFERENCE_KEY, "161");
+        mpdit.goTennaUpdateDataFromSharedPreferences(getContext());
 
 
-        Toast.makeText(getActivity(), "GID: " + gid, Toast.LENGTH_SHORT).show();
-
-        String power = sp.getString(PreferencesManager.GOTENNA_SETTINGS_POWER_PREFERENCE_KEY, "4");
-        String bandwidth = sp.getString(PreferencesManager.GOTENNA_SETTINGS_BANDWIDTH_PREFERENCE_KEY, "4");
-
-        try{
-            mpdit.mGoTennaGID = Long.parseLong(gid);
-            mpdit.mGoTennaUserName = name;
-            mpdit.mGoTennaMpditGID = Long.parseLong(gidMpdit);
-
-            mpdit.mGoTennaControlChannel[0] = Double.parseDouble(control1);
-            mpdit.mGoTennaControlChannel[1] = Double.parseDouble(control2);
-            mpdit.mGoTennaControlChannel[2] = Double.parseDouble(control3);
-
-            mpdit.mGoTennaDataChannel[0] = Double.parseDouble(data1);
-            mpdit.mGoTennaDataChannel[1] = Double.parseDouble(data2);
-            mpdit.mGoTennaDataChannel[2] = Double.parseDouble(data3);
-            mpdit.mGoTennaDataChannel[3] = Double.parseDouble(data4);
-            mpdit.mGoTennaDataChannel[4] = Double.parseDouble(data5);
-            mpdit.mGoTennaDataChannel[5] = Double.parseDouble(data6);
-            mpdit.mGoTennaDataChannel[6] = Double.parseDouble(data7);
-            mpdit.mGoTennaDataChannel[7] = Double.parseDouble(data8);
-            mpdit.mGoTennaDataChannel[8] = Double.parseDouble(data9);
-            mpdit.mGoTennaDataChannel[9] = Double.parseDouble(data10);
-            mpdit.mGoTennaDataChannel[10] = Double.parseDouble(data11);
-            mpdit.mGoTennaDataChannel[11] = Double.parseDouble(data12);
-            mpdit.mGoTennaDataChannel[12] = Double.parseDouble(data13);
-
-            mpdit.mGoTennaPower = Double.parseDouble(power);
-            mpdit.mGoTennaBandwidth = Double.parseDouble(bandwidth);
-        } catch (Exception e) {
-            Toast.makeText(getActivity(), "Bład parametrów pracy urządzenia:  " + e.toString(), Toast.LENGTH_SHORT).show();
-        }
     }
 
     @Override

@@ -1,11 +1,14 @@
 package im.vector;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.location.LocationListener;
 import android.os.Bundle;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.preference.PreferenceManager;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -43,6 +46,8 @@ import com.gotenna.sdk.frequency.PowerLevel;
 import com.gotenna.sdk.frequency.SetFrequencySlotInfoInteractor;
 
 import com.gotenna.sdk.responses.SystemInfoResponseData;
+
+import im.vector.util.PreferencesManager;
 
 
 /*
@@ -167,8 +172,6 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
     // konstruktor
     public MpditManager(){
 
-
-
     }
 
 
@@ -181,8 +184,78 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
             goTennaTechnicalMessageListener.onNewGotennaTechnicalMessage();
     }
 
+    public void goTennaUpdateDataFromSharedPreferences(Context context) {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+
+        String gid = sp.getString(PreferencesManager.GOTENNA_SETTINGS_GID_PREFERENCE_KEY, "999666");
+        String name = sp.getString(PreferencesManager.GOTENNA_SETTINGS_NAME_PREFERENCE_KEY, "999666");
+        String gidMpdit = sp.getString(PreferencesManager.GOTENNA_SETTINGS_MPDIT_PREFERENCE_KEY, "999666");
+
+        String control1 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_CONTROL_CHANNEL_1_PREFERENCE_KEY, "145");
+        String control2 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_CONTROL_CHANNEL_2_PREFERENCE_KEY, "146");
+        String control3 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_CONTROL_CHANNEL_3_PREFERENCE_KEY, "147");
+
+        String data1 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_1_PREFERENCE_KEY, "148");
+        String data2 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_2_PREFERENCE_KEY, "149");
+        String data3 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_3_PREFERENCE_KEY, "151");
+        String data4 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_4_PREFERENCE_KEY, "152");
+        String data5 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_5_PREFERENCE_KEY, "153");
+        String data6 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_6_PREFERENCE_KEY, "154");
+        String data7 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_7_PREFERENCE_KEY, "155");
+        String data8 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_8_PREFERENCE_KEY, "156");
+        String data9 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_9_PREFERENCE_KEY, "157");
+        String data10 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_10_PREFERENCE_KEY, "158");
+        String data11 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_11_PREFERENCE_KEY, "159");
+        String data12 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_12_PREFERENCE_KEY, "160");
+        String data13 = sp.getString(PreferencesManager.GOTENNA_SETTINGS_DATA_CHANNEL_13_PREFERENCE_KEY, "161");
+
+
+        //Toast.makeText(getActivity(), "GID: " + gid, Toast.LENGTH_SHORT).show();
+
+        String power = sp.getString(PreferencesManager.GOTENNA_SETTINGS_POWER_PREFERENCE_KEY, "4");
+        String bandwidth = sp.getString(PreferencesManager.GOTENNA_SETTINGS_BANDWIDTH_PREFERENCE_KEY, "4");
+
+        try{
+            mGoTennaGID = Long.parseLong(gid);
+            mGoTennaUserName = name;
+            mGoTennaMpditGID = Long.parseLong(gidMpdit);
+
+            mGoTennaControlChannel[0] = Double.parseDouble(control1);
+            mGoTennaControlChannel[1] = Double.parseDouble(control2);
+            mGoTennaControlChannel[2] = Double.parseDouble(control3);
+
+            mGoTennaDataChannel[0] = Double.parseDouble(data1);
+            mGoTennaDataChannel[1] = Double.parseDouble(data2);
+            mGoTennaDataChannel[2] = Double.parseDouble(data3);
+            mGoTennaDataChannel[3] = Double.parseDouble(data4);
+            mGoTennaDataChannel[4] = Double.parseDouble(data5);
+            mGoTennaDataChannel[5] = Double.parseDouble(data6);
+            mGoTennaDataChannel[6] = Double.parseDouble(data7);
+            mGoTennaDataChannel[7] = Double.parseDouble(data8);
+            mGoTennaDataChannel[8] = Double.parseDouble(data9);
+            mGoTennaDataChannel[9] = Double.parseDouble(data10);
+            mGoTennaDataChannel[10] = Double.parseDouble(data11);
+            mGoTennaDataChannel[11] = Double.parseDouble(data12);
+            mGoTennaDataChannel[12] = Double.parseDouble(data13);
+
+            mGoTennaPower = Double.parseDouble(power);
+            mGoTennaBandwidth = Double.parseDouble(bandwidth);
+        } catch (Exception e) {
+            //Toast.makeText(getActivity(), "Bład parametrów pracy urządzenia:  " + e.toString(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // automatyczne łączenie z gotenna: uruchomienie funkcji połącz ponownie
+    public void goTennaAutoConnect(Context context) {
+        if(goTennaInit(context)) {
+            goTennaConnectPrevious();
+        }
+    }
+
     public boolean goTennaInit(Context context)
     {
+        if(!goTennaNeedInit) return true;
+
         // goTenna
         try {
             GoTenna.setApplicationToken(context, GOTENNA_APP_TOKEN);
@@ -1513,9 +1586,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         }
     }
 
-    // automatyczne łączenie z gotenna: uruchomienie funkcji połącz ponownie
-    public void goTennaAutoConnect() {
-    }
+
 
 
     //==============================================================================================

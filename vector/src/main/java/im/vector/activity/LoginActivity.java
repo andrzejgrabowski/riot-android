@@ -736,6 +736,32 @@ public class LoginActivity extends MXCActionBarActivity implements RegistrationM
         }
     }
 
+
+    // MPDIT GOTENNA BRAK SIECI
+    public void goTennaOnlyDialog(String caller) {
+        /*
+        try {
+            new AlertDialog.Builder(getApplicationContext())
+                    .setMessage("Błąd sieci Ubiquity. Czy uruchomić aplikację w trybie połączenia tylko z siecią MESH typu goTenna? \n" + caller)
+                    .setCancelable(false)
+                    .setPositiveButton("Tryb goTenna", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    })
+                    .setNegativeButton("Ponów próbę połączenia", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            //BugReporter.deleteCrashFile(VectorHomeActivity.this);
+                        }
+                    })
+                    .show();
+        } catch (Exception ee) {
+            //Log.e(LOG_TAG, "## onResume() : appCrashedAlert failed " + e.getMessage(), e);
+        }*/
+    }
+
     private void tryAutoDiscover(String possibleDomain) {
         if (autoDiscoveredDomainCache.containsKey(possibleDomain)) {
             onAutoDiscoveryRetrieved(possibleDomain, autoDiscoveredDomainCache.get(possibleDomain));
@@ -1260,18 +1286,24 @@ public class LoginActivity extends MXCActionBarActivity implements RegistrationM
                     public void onNetworkError(Exception e) {
                         enableLoadingScreen(false);
                         Toast.makeText(LoginActivity.this, e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+
+                        goTennaOnlyDialog("LoginRestClient: onNetworkError");
                     }
 
                     @Override
                     public void onMatrixError(MatrixError e) {
                         enableLoadingScreen(false);
                         Toast.makeText(LoginActivity.this, e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+
+                        goTennaOnlyDialog("LoginRestClient: onMatrixError");
                     }
 
                     @Override
                     public void onUnexpectedError(Exception e) {
                         enableLoadingScreen(false);
                         Toast.makeText(LoginActivity.this, e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+
+                        goTennaOnlyDialog("LoginRestClient: onUnexpectedError");
                     }
 
                     @Override
@@ -1325,6 +1357,8 @@ public class LoginActivity extends MXCActionBarActivity implements RegistrationM
                 if (mMode == MODE_FORGOT_PASSWORD) {
                     enableLoadingScreen(false);
                     Toast.makeText(LoginActivity.this, errorMessage, Toast.LENGTH_LONG).show();
+
+                    goTennaOnlyDialog("doForgetPasswordRequest: onError");
                 }
             }
 
@@ -1425,6 +1459,8 @@ public class LoginActivity extends MXCActionBarActivity implements RegistrationM
                             refreshDisplay(true);
                         }
                     }
+
+                    goTennaOnlyDialog("onForgotOnEmailValidated: onError");
                 }
 
                 @Override
@@ -1787,6 +1823,7 @@ public class LoginActivity extends MXCActionBarActivity implements RegistrationM
                                 enableLoadingScreen(false);
                                 Toast.makeText(getApplicationContext(), errorMessage, Toast.LENGTH_LONG).show();
                             }
+                            goTennaOnlyDialog("checkRegistrationFlows: onError");
                         }
 
                         @Override
@@ -1797,6 +1834,7 @@ public class LoginActivity extends MXCActionBarActivity implements RegistrationM
                                 onError(getString(R.string.login_error_registration_network_error) + " : " + e.getLocalizedMessage());
                                 setActionButtonsEnabled(false);
                             }
+                            goTennaOnlyDialog("checkRegistrationFlows: onNetworkError");
                         }
 
                         @Override
@@ -2107,27 +2145,7 @@ public class LoginActivity extends MXCActionBarActivity implements RegistrationM
                     enableLoadingScreen(false);
                     Toast.makeText(getApplicationContext(), getString(R.string.login_error_network_error), Toast.LENGTH_LONG).show();
 
-                    // MPDIT GOTENNA BRAK SIECI
-                    try {
-                        new AlertDialog.Builder(getApplicationContext())
-                                .setMessage("Błąd sieci Ubiquity. Czy uruchomić aplikację w trybie połączenia tylko z siecią MESH typu goTenna?")
-                                .setCancelable(false)
-                                .setPositiveButton("Tryb goTenna", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-
-                                    }
-                                })
-                                .setNegativeButton("Ponów próbę połączenia", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        //BugReporter.deleteCrashFile(VectorHomeActivity.this);
-                                    }
-                                })
-                                .show();
-                    } catch (Exception ee) {
-                        //Log.e(LOG_TAG, "## onResume() : appCrashedAlert failed " + e.getMessage(), e);
-                    }
+                    goTennaOnlyDialog("login: onNetworkError");
 
                 }
 
@@ -2243,6 +2261,8 @@ public class LoginActivity extends MXCActionBarActivity implements RegistrationM
                             setActionButtonsEnabled(false);
                             displayErrorOnUrl(mHomeServerTextTil, errorMessage);
                         }
+
+                        goTennaOnlyDialog("checkLoginFlows: onError");
                     }
 
                     @Override
@@ -2258,6 +2278,8 @@ public class LoginActivity extends MXCActionBarActivity implements RegistrationM
                             addNetworkStateNotificationListener();
                             onError(getString(R.string.login_error_unable_login) + " : " + e.getLocalizedMessage());
                         }
+
+                        goTennaOnlyDialog("checkLoginFlows: onNetworkError");
                     }
 
                     @Override
@@ -2269,6 +2291,8 @@ public class LoginActivity extends MXCActionBarActivity implements RegistrationM
                         } else {
                             onError(getString(R.string.login_error_unable_login) + " : " + e.getLocalizedMessage());
                         }
+
+                        goTennaOnlyDialog("checkLoginFlows: onUnexpectedError");
                     }
 
                     @Override

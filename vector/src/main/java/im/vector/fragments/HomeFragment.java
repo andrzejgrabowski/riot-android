@@ -137,8 +137,10 @@ public class HomeFragment extends AbsHomeFragment implements HomeRoomAdapter.OnS
                 MpditManager mpdit = null;
                 if (app != null) {
                     mpdit = app.getMpditManger();
-                    if(null != mpdit)
-                        mpdit.goTennaAutoConnect();
+                    if(null != mpdit) {
+                        mpdit.goTennaUpdateDataFromSharedPreferences(getContext());
+                        mpdit.goTennaAutoConnect(getContext());
+                    }
                 }
 
             }
