@@ -44,7 +44,9 @@ import java.util.Map;
 
 import butterknife.BindView;
 import im.vector.ErrorListener;
+import im.vector.ErrorListenerGoTenna;
 import im.vector.Matrix;
+import im.vector.MyPresenceManager;
 import im.vector.R;
 import im.vector.VectorApp;
 import im.vector.analytics.TrackingEvent;
@@ -56,7 +58,7 @@ import im.vector.util.PreferencesManager;
 /**
  * SplashActivity displays a splash while loading and initializing the client.
  */
-public class SplashActivity extends MXCActionBarActivity {
+public class SplashActivity extends MXCActionBarActivity implements ErrorListenerGoTenna.GoTennaNetworkErrorListener {
     private static final String LOG_TAG = SplashActivity.class.getSimpleName();
 
     public static final String EXTRA_MATRIX_ID = "EXTRA_MATRIX_ID";
@@ -68,6 +70,9 @@ public class SplashActivity extends MXCActionBarActivity {
     private final long mLaunchTime = System.currentTimeMillis();
 
     private static final String NEED_TO_CLEAR_CACHE_BEFORE_81200 = "NEED_TO_CLEAR_CACHE_BEFORE_81200";
+
+    private ErrorListenerGoTenna mErrorListenerGoTenna = null;
+    public boolean mGoTennaDialogIsShown = false;
 
     /* ==========================================================================================
      * UI
@@ -143,7 +148,10 @@ public class SplashActivity extends MXCActionBarActivity {
         return R.layout.vector_activity_splash;
     }
 
-    public void goTennaOnlyDialog(String caller) {
+    public void goTennaOnlyDialog(String caller, ErrorListenerGoTenna listener) {
+
+        if(mGoTennaDialogIsShown)
+            return;
 
         try {
             new AlertDialog.Builder(this)
@@ -152,6 +160,10 @@ public class SplashActivity extends MXCActionBarActivity {
                     .setPositiveButton("Tryb goTenna", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
+                            mGoTennaDialogIsShown = false;
+                            mErrorListenerGoTenna.mSHowNetworkErrorToast = false;
+                            listener.mSHowNetworkErrorToast = false;
+                            onFinish();
 
                         }
                     })
@@ -159,9 +171,11 @@ public class SplashActivity extends MXCActionBarActivity {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             //BugReporter.deleteCrashFile(VectorHomeActivity.this);
+                            mGoTennaDialogIsShown = false;
                         }
                     })
                     .show();
+            mGoTennaDialogIsShown = true;
         } catch (Exception ee) {
             //Log.e(LOG_TAG, "## onResume() : appCrashedAlert failed " + e.getMessage(), e);
         }
@@ -170,6 +184,8 @@ public class SplashActivity extends MXCActionBarActivity {
     @Override
     public void initUiAndData() {
 
+
+        //if(2 > 1) return;
 
         Drawable background = animatedLogo.getBackground();
         if (background instanceof AnimationDrawable) {
@@ -182,6 +198,9 @@ public class SplashActivity extends MXCActionBarActivity {
             onFinish();
             return;
         }*/
+
+
+
 
 
         List<MXSession> sessions = Matrix.getInstance(getApplicationContext()).getSessions();
@@ -236,6 +255,7 @@ public class SplashActivity extends MXCActionBarActivity {
 
 
 
+
         //goTennaOnlyDialog("initUiAndData: 2");
 
         // Check the lazy loading status
@@ -285,7 +305,7 @@ public class SplashActivity extends MXCActionBarActivity {
                 session.canEnableLazyLoading(new ApiCallback<Boolean>() {
                     @Override
                     public void onNetworkError(Exception e) {
-                        goTennaOnlyDialog("checkLazyLoadingStatus: onNetworkError");
+                        //goTennaOnlyDialog("checkLazyLoadingStatus: onNetworkError");
                         // Ignore, maybe next time
                         startEventStreamService(sessions);
 
@@ -294,7 +314,7 @@ public class SplashActivity extends MXCActionBarActivity {
 
                     @Override
                     public void onMatrixError(MatrixError e) {
-                        goTennaOnlyDialog("checkLazyLoadingStatus: onMatrixError");
+                        //goTennaOnlyDialog("checkLazyLoadingStatus: onMatrixError");
                         // Ignore, maybe next time
                         startEventStreamService(sessions);
 
@@ -303,7 +323,7 @@ public class SplashActivity extends MXCActionBarActivity {
 
                     @Override
                     public void onUnexpectedError(Exception e) {
-                        goTennaOnlyDialog("checkLazyLoadingStatus: onUnexpectedError");
+                        //goTennaOnlyDialog("checkLazyLoadingStatus: onUnexpectedError");
                         // Ignore, maybe next time
                         startEventStreamService(sessions);
 
@@ -329,6 +349,11 @@ public class SplashActivity extends MXCActionBarActivity {
     }
 
     private void startEventStreamService(Collection<MXSession> sessions) {
+
+        //goTennaOnlyDialog("startEventStreamService: init");
+
+        //if(2 > 1) return;
+
         List<String> matrixIds = new ArrayList<>();
 
         for (final MXSession session : sessions) {
@@ -379,18 +404,34 @@ public class SplashActivity extends MXCActionBarActivity {
             };
 
             if (!fSession.getDataHandler().isInitialSyncComplete()) {
+
+
+                //goTennaOnlyDialog("startEventStreamService: get store");
                 session.getDataHandler().getStore().open();
+
+
 
                 mListeners.put(fSession, eventListener);
                 fSession.getDataHandler().addListener(eventListener);
 
+
+
                 // Set the main error listener
-                fSession.setFailureCallback(new ErrorListener(fSession, this));
+                mErrorListenerGoTenna = new ErrorListenerGoTenna(fSession, this, this);
+                fSession.setFailureCallback(mErrorListenerGoTenna);
+
+                //onFinish();
 
                 // session to activate
                 matrixIds.add(session.getCredentials().userId);
             }
         }
+
+        //goTennaOnlyDialog("startEventStreamService: after init");
+
+        //onFinish();
+
+
 
         // when the events stream has been disconnected by the user
         // they must be awoken even if they are initialized
@@ -404,7 +445,12 @@ public class SplashActivity extends MXCActionBarActivity {
             Matrix.getInstance(this).mHasBeenDisconnected = false;
         }
 
+
+
         EventStreamServiceX.Companion.onApplicationStarted(this);
+
+        ///onFinish();
+
 
         // trigger the push registration if required
         PushManager pushManager = Matrix.getInstance(getApplicationContext()).getPushManager();
@@ -426,6 +472,31 @@ public class SplashActivity extends MXCActionBarActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        /*
+        KOD Z: super.OnResume()
+        Matrix.setSessionErrorListener(this);
+
+        // the online presence must be displayed ASAP.
+        if ((null != Matrix.getInstance(this)) && (null != Matrix.getInstance(this).getSessions())) {
+            MyPresenceManager.createPresenceManager(this, Matrix.getInstance(this).getSessions());
+            MyPresenceManager.advertiseAllOnline();
+        }*/
+
+        //robimy korekte listy error listener
+        //Collection<MXSession> sessions = getMXSessions(activity);
+        List<MXSession> sessions = Matrix.getInstance(getApplicationContext()).getSessions();
+
+        for (MXSession session : sessions) {
+            if (session.isAlive()) {
+                session.setFailureCallback(new ErrorListenerGoTenna(session, this, this));
+            }
+        }
+
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
 
@@ -436,6 +507,14 @@ public class SplashActivity extends MXCActionBarActivity {
                 session.getDataHandler().removeListener(mDoneListeners.get(session));
                 session.setFailureCallback(null);
             }
+        }
+    }
+
+    @Override
+    public void onNextNetworkError(int networkErrorCounter, ErrorListenerGoTenna listener) {
+        if(networkErrorCounter > 3) {
+            // TO DO: onFinish();
+            goTennaOnlyDialog(" ", listener);
         }
     }
 }
