@@ -50,6 +50,7 @@ import im.vector.MeshNode;
 import im.vector.MpditManager;
 import im.vector.R;
 import im.vector.VectorApp;
+import im.vector.activity.GoTennaChatActivity;
 import im.vector.activity.VectorGroupDetailsActivity;
 import im.vector.adapters.AbsAdapter;
 import im.vector.adapters.GroupAdapter;
@@ -416,9 +417,74 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
     }
 
 
+
+
+    private void startChat() {
+
+        VectorApp app = VectorApp.getInstance();
+        if (null == app)    return;
+
+        MpditManager mpdit = app.getMpditManger();
+        if (null == mpdit)  return;
+
+                // TO DO !!!
+                Vector<MeshNode> nodes = null;
+                switch(mSelectedTable) {
+                    case UBIQUITY_TABLE:
+                        nodes = mpdit.getUbiquityNodes();
+                        if (mSelctedID >= 0 && mSelctedID < nodes.size()) {
+                            MeshNode node = nodes.get(mSelctedID);
+
+                            // uruchamiamy chat z ubiquity bezpośrednio
+                            // TO DO !!!
+                            // trzeba sprawdzic czy mamy połaczenie z serwerem, ale jak? można wykorzystać do tego okno dialogowe jakie użyliśmy na początku
+
+
+
+                            // uruchamiamy chat z ubiquity przez bramkę gotenna
+                            if(mpdit.isGotennaConnected())
+                            {
+                                mpdit.goTennaSetChatUser(node.IP, node.name, MpditManager.CHAT_MODE_GOTENNA_UBIQUITY);
+                                final Intent chatIntent = new Intent(mActivity, GoTennaChatActivity.class); //VectorHomeActivity.this
+                                startActivity(chatIntent);
+                            }
+                        }
+                        break;
+
+
+                    case GOTENNA_TABLE:
+                        nodes = mpdit.getGotennaNodes();
+                        if (mSelctedID >= 0 && mSelctedID < nodes.size()) {
+                            MeshNode node = nodes.get(mSelctedID);
+                            // uruchamiamy chat z gotenna bezpośrednio lub przez bramke ubiquity
+                            // funkca sendMessage sama dobiera odpowiedni tryb
+                            mpdit.goTennaSetChatUser(node.ID, node.name, MpditManager.CHAT_MODE_GOTENNA);
+                            {
+                                final Intent chatIntent = new Intent(mActivity, GoTennaChatActivity.class); //VectorHomeActivity.this
+                                startActivity(chatIntent);
+                            }
+                        }
+                        break;
+
+
+                    case MPDIT_TABLE:
+                        nodes = mpdit.getMpditNodes();
+                        if (mSelctedID >= 0 && mSelctedID < nodes.size()) {
+                            MeshNode node = nodes.get(mSelctedID);
+                            // TO DO !!!
+                        }
+                        break;
+                }
+
+
+
+
+    }
+
     /*
     MAP BOX
      */
+
 
 
 
@@ -427,7 +493,8 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
         switch (v.getId()) {
             case R.id.buttonMapBoxObject:
                 // wywolujemy komunikacje z wybranym na mapie użytkownikiem
-                // TO DO !!!
+                startChat();
+
                 break;
             case R.id.buttonMapBoxCenter:
                 //Toast.makeText(mActivity, "Centruj", Toast.LENGTH_SHORT).show();
