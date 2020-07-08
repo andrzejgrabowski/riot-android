@@ -16,6 +16,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.PortUnreachableException;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.nio.channels.IllegalBlockingModeException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -134,11 +135,12 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
     //private int mPortSend = 6385;
 
     public int mPacketCount = 0;
-    public String mID = "28";
-    public String mDisplayedName = "u28";
+    public String mID = "unknown!!!";
+    public String mDisplayedName = "unknown!!!";
     public String mNetworkType = "U";
 
     public String mLastPacket = "?";
+    public String mLastPacketError = "?";
 
     public String mLastExceptionMessage = "?";
     public String mLastExceptionGoTennaMessage = "?";
@@ -552,6 +554,9 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
 
     public void sendGpsGataByUdpBroadcast(DatagramSocket SocketSend)
     {
+        if(mID.compareTo("unknown!!!") == 0)
+            return;
+
         //String[] separated = currentString.split(":");
         //separated[1] = separated[1].trim();
         String[] s = mDeviceIP.split("\\.");
@@ -571,7 +576,9 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
 
                     InetAddress server = InetAddress.getByName(address);
                     DatagramPacket packet = new DatagramPacket(buf, buf.length, server, mPort);
-                    SocketSend.send(packet);
+                    // sami do siebie nie wysyłamy
+                    if(address.compareTo(mDeviceIP) != 0)
+                        SocketSend.send(packet);
                 } catch (Exception e) {
                     //mLastExceptionMessage = e.getMessage();
                 }
@@ -601,6 +608,9 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
 
     public void sendGpsDataByUdp(DatagramSocket SocketSend)
     {
+        if(mID.compareTo("unknown!!!") == 0)
+            return;
+
         sendUdp = false;
 
         // TO DO !!!
@@ -639,7 +649,8 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
                     s = "null packet";
                 if(SocketSend == null)
                     s = "null socket";
-                SocketSend.send(packet);
+                if(mListeners.get(i).compareTo(mDeviceIP) != 0)
+                    SocketSend.send(packet);
                 s = "4";
             }
             catch (PortUnreachableException e)    {
@@ -754,11 +765,12 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
 
         if (goTennaMessageListener != null)     goTennaMessageListener.onIncomingMessage(sender_name,message_text);
     }
-    public void AddOrModifyMeshNodeGpsDataFromUdp(String data, String ip)
+    public String AddOrModifyMeshNodeGpsDataFromUdp(String data, String ip)
     {
+        String errorCode = "X1";
         String[] s = data.split("\t");
         //sprawdzamy typ sieci [5]
-        if(s.length < 6)    return;
+        if(s.length < 6)    return errorCode;
 
         /*
         w paczce przesyłamy:
@@ -770,122 +782,180 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         5 networkType (U - ubiquity; G - goTenna (przez bramkę); M - pojazd MPDIT)
         */
 
+        double lat = -1.0;
+        double lng = -1.0;
+        boolean godLL = true;
+
+        try {
+            lat = Double.parseDouble(s[1]);
+        } catch (Exception e) {
+
+            try {
+                s[1] = s[1].replace(',','.');
+                lat = Double.parseDouble(s[1]);
+            } catch (Exception ee) { godLL = false; }
+        }
 
 
-        if(s[5].compareTo("U") == 0)
-        {
-            // UBIQUITY
-            if(mDeviceIP.compareTo(ip) != 0) {
-                // jezeli nie jest to wiadomość od nas to ją analizujemy
-                boolean newnode = true;
+        try {
+            lng = Double.parseDouble(s[2]);
+        } catch (Exception e) {
+            try {
+                s[2] = s[2].replace(',','.');
+                lng = Double.parseDouble(s[2]);
+            } catch (Exception ee) { godLL = false; }
+        }
 
-                for (int i = 0; i < mNodesUbiquity.size(); i++) {
-                    if (ip.compareTo(mNodesUbiquity.get(i).IP) == 0) {
-                        newnode = false;
-                        mNodesUbiquity.get(i).data = data;
-                        mNodesUbiquity.get(i).lat = Double.valueOf(s[1]);
-                        mNodesUbiquity.get(i).lng = Double.valueOf(s[2]);
-                        mNodesUbiquity.get(i).ID = s[3];
-                        mNodesUbiquity.get(i).name = s[4];
-                        mNodesUbiquity.get(i).visibleOnMap = true;
+        mLastPacketError = s[1] + " - " + s[2] + " - LAT: " + lat + " LNG: " + lng;
+
+
+        try {
+
+
+            errorCode = "U1";
+            if (s[5].compareTo("U") == 0) {
+                // UBIQUITY
+                errorCode = "U2";
+                if (mDeviceIP.compareTo(ip) != 0) {
+                    errorCode = "U3";
+                    // jezeli nie jest to wiadomość od nas to ją analizujemy
+                    boolean newnode = true;
+
+                    for (int i = 0; i < mNodesUbiquity.size(); i++) {
+                        errorCode = "U4";
+                        if (ip.compareTo(mNodesUbiquity.get(i).IP) == 0) {
+                            errorCode = "U5";
+                            newnode = false;
+                            mNodesUbiquity.get(i).data = data;
+                            errorCode = "U6";
+                            mNodesUbiquity.get(i).lat = lat;
+                            errorCode = "U7";
+                            mNodesUbiquity.get(i).lng = lng;
+                            errorCode = "U8";
+                            mNodesUbiquity.get(i).ID = s[3];
+                            errorCode = "U9";
+                            mNodesUbiquity.get(i).name = s[4];
+                            errorCode = "U10";
+                            mNodesUbiquity.get(i).visibleOnMap = godLL;
+                            errorCode = "U11";
+                        }
+                    }
+
+                    if (newnode) {
+                        errorCode = "U12";
+                        MeshNode node = new MeshNode();
+                        errorCode = "U13";
+                        node.data = data;
+                        errorCode = "U14";
+                        node.lat = lat;
+                        errorCode = "U15";
+                        node.lng = lng;
+                        errorCode = "U16";
+                        node.ID = s[3];
+                        errorCode = "U17";
+                        node.name = s[4];
+                        errorCode = "U18";
+                        node.IP = ip;
+                        errorCode = "U19";
+                        node.visibleOnMap = godLL;
+
+                        // do listy nie dodajemy też bramki
+                        errorCode = "U21";
+                        if (mGatewayIP.compareTo(ip) != 0) {
+                            errorCode = "U22";
+                            addUbiquityNode(node);//mNodesUbiquity.add(node);
+                        }
+                    }
+                }
+            }
+
+            errorCode = "M1";
+            if (s[5].compareTo("M") == 0) {
+                // MPDIT pojazd
+                String id = s[3];
+                int i = 0;
+
+                // sprawdzamy czy to MPDIT
+                boolean dataFromMpdit = false;
+                for (i = 0; i < mNodesMpdit.size(); i++) {
+                    if (id.compareTo(mNodesMpdit.get(i).ID) == 0) {
+                        dataFromMpdit = true;
+                        mNodesMpdit.get(i).data = data;
+                        mNodesMpdit.get(i).lat = lat;
+                        mNodesMpdit.get(i).lng = lng;
+                        mNodesMpdit.get(i).name = s[4];
+                        mNodesMpdit.get(i).visibleOnMap = godLL;
+                    }
+                }
+            }
+
+            errorCode = "G1";
+            if (s[5].compareTo("G") == 0) {
+                mGatewayIP = ip;
+                // GOTENNA
+                String id = s[3];
+                int i = 0;
+
+                // sprawdzamy czy to MPDIT
+                boolean dataFromMpdit = false;
+                for (i = 0; i < mNodesMpdit.size(); i++) {
+                    if (id.compareTo(mNodesMpdit.get(i).ID) == 0) {
+                        dataFromMpdit = true;
+                        mNodesMpdit.get(i).data = data;
+                        mNodesMpdit.get(i).lat = lat;
+                        mNodesMpdit.get(i).lng = lng;
+                        mNodesMpdit.get(i).name = s[4];
+                        mNodesMpdit.get(i).visibleOnMap = godLL;
                     }
                 }
 
-                if (newnode) {
-                    MeshNode node = new MeshNode();
-                    node.data = data;
-                    node.lat = Double.valueOf(s[1]);
-                    node.lng = Double.valueOf(s[2]);
-                    node.ID = s[3];
-                    node.name = s[4];
-                    node.IP = ip;
-                    node.visibleOnMap = true;
 
-                    // do listy nie dodajemy też bramki
-                    if(mGatewayIP.compareTo(ip) != 0)
-                        addUbiquityNode(node);//mNodesUbiquity.add(node);
-                }
-            }
-        }
-
-        if(s[5].compareTo("M") == 0) {
-            // MPDIT pojazd
-            String id = s[3];
-            int i = 0;
-
-            // sprawdzamy czy to MPDIT
-            boolean dataFromMpdit = false;
-            for (i = 0; i < mNodesMpdit.size(); i++) {
-                if (id.compareTo(mNodesMpdit.get(i).ID) == 0) {
-                    dataFromMpdit = true;
-                    mNodesMpdit.get(i).data = data;
-                    mNodesMpdit.get(i).lat = Double.valueOf(s[1]);
-                    mNodesMpdit.get(i).lng = Double.valueOf(s[2]);
-                    mNodesMpdit.get(i).name = s[4];
-                    mNodesMpdit.get(i).visibleOnMap = true;
-                }
-            }
-        }
+                //if(!dataFromMpdit)
+                {
+                    boolean newnode = true;
 
 
-        if(s[5].compareTo("G") == 0)
-        {
-            mGatewayIP = ip;
-            // GOTENNA
-            String id = s[3];
-            int i = 0;
+                    for (i = 0; i < mNodesGotenna.size(); i++) {
+                        if (id.compareTo(mNodesGotenna.get(i).ID) == 0) {
+                            newnode = false;
+                            mNodesGotenna.get(i).data = data;
+                            mNodesGotenna.get(i).lat = Double.valueOf(s[1]);
+                            mNodesGotenna.get(i).lng = Double.valueOf(s[2]);
+                            //mNodesGotenna.get(i).ID = s[3];
+                            mNodesGotenna.get(i).name = s[4];
+                            if (dataFromMpdit)
+                                mNodesGotenna.get(i).visibleOnMap = false;
+                            else
+                                mNodesGotenna.get(i).visibleOnMap = false;
+                        }
+                    }
 
-            // sprawdzamy czy to MPDIT
-            boolean dataFromMpdit = false;
-            for (i = 0; i < mNodesMpdit.size(); i++) {
-                if (id.compareTo(mNodesMpdit.get(i).ID) == 0) {
-                    dataFromMpdit = true;
-                    mNodesMpdit.get(i).data = data;
-                    mNodesMpdit.get(i).lat = Double.valueOf(s[1]);
-                    mNodesMpdit.get(i).lng = Double.valueOf(s[2]);
-                    mNodesMpdit.get(i).name = s[4];
-                    mNodesMpdit.get(i).visibleOnMap = true;
-                }
-            }
-
-
-            //if(!dataFromMpdit)
-            {
-                boolean newnode = true;
-
-
-                for (i = 0; i < mNodesGotenna.size(); i++) {
-                    if (id.compareTo(mNodesGotenna.get(i).ID) == 0) {
-                        newnode = false;
-                        mNodesGotenna.get(i).data = data;
-                        mNodesGotenna.get(i).lat = Double.valueOf(s[1]);
-                        mNodesGotenna.get(i).lng = Double.valueOf(s[2]);
-                        //mNodesGotenna.get(i).ID = s[3];
-                        mNodesGotenna.get(i).name = s[4];
-                        if(dataFromMpdit)
-                            mNodesGotenna.get(i).visibleOnMap = false;
+                    if (newnode) {
+                        MeshNode node = new MeshNode();
+                        node.data = data;
+                        node.lat = lat;
+                        node.lng = lng;
+                        node.ID = s[3];
+                        node.name = s[4];
+                        node.IP = ip;
+                        if (dataFromMpdit)
+                            node.visibleOnMap = false;
                         else
-                            mNodesGotenna.get(i).visibleOnMap = false;
+                            node.visibleOnMap = true;
+
+                        addGotennaNode(node);//mNodesGotenna.add(node);
                     }
                 }
-
-                if (newnode) {
-                    MeshNode node = new MeshNode();
-                    node.data = data;
-                    node.lat = Double.valueOf(s[1]);
-                    node.lng = Double.valueOf(s[2]);
-                    node.ID = s[3];
-                    node.name = s[4];
-                    node.IP = ip;
-                    if(dataFromMpdit)
-                        node.visibleOnMap = false;
-                    else
-                        node.visibleOnMap = true;
-
-                    addGotennaNode(node);//mNodesGotenna.add(node);
-                }
             }
+
+            //errorCode = "OK! ";
+
+        } catch (Exception e) {
+            //String errorCode = "X1";
+            mLastPacketError = errorCode + " : " + e.toString();
         }
+
+        return errorCode;
     }
 
     @Override
@@ -939,7 +1009,8 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
             e.printStackTrace();
         }
 
-        int iter =0;
+        int iter = 0;
+        int iterAfter = 0;
         long startTime = System.currentTimeMillis();
         long startTimeGoTenna = System.currentTimeMillis();
 
@@ -947,7 +1018,6 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         mLastPacket = "listening...";
         while (mWork) {
 
-            iter++;
             // wysylamy dane o GPS przez gniazda do wszystkich w sieci
             if(System.currentTimeMillis() - startTime > mBroadcastDelay*1000) {
                 startTime = System.currentTimeMillis();
@@ -970,43 +1040,30 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
             // TO DO !!!
             sendGoTennaMessagesByGateWay(mSocket);
 
+            String errorCode = "A ";
+
             // listen
             try {
 
+                mSocket.setSoTimeout(1000);
                 if(mSocket != null) {
-                    byte[] message = new byte[500];
+
+
+                    iter++;
+                    errorCode = "A ";
+
+                    byte[] message = new byte[2500];
                     DatagramPacket packet = new DatagramPacket(message, message.length);//, InetAddress.getByName("10.3.2.8"), mPort);
+                    errorCode = "B ";
                     //packet.setPort(mPort);
 
                     //Log.i("UDP client: ", "about to wait to receive");
-                    mSocket.setSoTimeout(1000);
                     mSocket.receive(packet);
-                    String data = new String(message, 0, packet.getLength());
+                    errorCode = "C ";
+                    iterAfter++;
+
                     String ip = packet.getAddress().getHostAddress();
-
-                    //analizujemy nagłówek
-                    String header = data.substring(0,3);
-
-                    if(header.compareTo("GTW") == 0) {
-                        // pakiet od bramki, to możemy pozyskać adres IP bramki
-                         mGatewayIP = ip;
-                    }
-
-                    if(header.compareTo("GPS") == 0) {
-                        // nowe dane GPS, dodajemy dane do tablic
-                        // adres IP bramki aktualizujemy jezli sa to dane z sieci gotenna (NetworkType: 'G')
-                        AddOrModifyMeshNodeGpsDataFromUdp(data,ip);
-                    }
-
-                    if(header.compareTo("TXT") == 0) {
-                        // wiadomosc tekstowa, dodajemy dane do tabeli
-                        // tutaj dostajemy od bramki GateWayMPDIT wiadomości od sieci MESH goTenna
-                        mGatewayIP = ip;
-                        AddOrModifyMeshNodeTxtDataFromUdp(data,ip);
-                    }
-
-                    mLastPacket = data + String.format("  %d %d",iter,mListeners.size());
-
+                    errorCode = "D ";
 
                     // sprawdzamy czy to jest nowy adres IP
                     boolean contains = false;
@@ -1015,18 +1072,65 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
                         if(ip.compareTo(mListeners.get(i)) == 0)
                             contains = true;
                     }
-                    if(!contains)
+                    errorCode = "E ";
+                    if(!contains && ip.compareTo(mDeviceIP) != 0) {
+                        errorCode = "F ";
                         mListeners.add(ip);
+                    }
+                    errorCode = "G ";
+
+                    String data = new String(message, 0, packet.getLength());
+                    errorCode = "H ";
+                    mLastPacket = data + String.format("  %d %d %d",iter, iterAfter, mListeners.size());
+
+
+                    errorCode = "I ";
+                    //analizujemy nagłówek
+                    if(data.length() >= 3) {
+                        errorCode = "J ";
+                        String header = data.substring(0, 3);
+
+                        if (header.compareTo("GTW") == 0) {
+                            errorCode = "K ";
+                            // pakiet od bramki, to możemy pozyskać adres IP bramki
+                            mGatewayIP = ip;
+                        }
+
+                        if (header.compareTo("GPS") == 0) {
+                            errorCode = "L ";
+                            // nowe dane GPS, dodajemy dane do tablic
+                            // adres IP bramki aktualizujemy jezli sa to dane z sieci gotenna (NetworkType: 'G')
+                            errorCode = AddOrModifyMeshNodeGpsDataFromUdp(data, ip);
+                        }
+
+                        if (header.compareTo("TXT") == 0) {
+                            errorCode = "Z ";
+                            // wiadomosc tekstowa, dodajemy dane do tabeli
+                            // tutaj dostajemy od bramki GateWayMPDIT wiadomości od sieci MESH goTenna
+                            mGatewayIP = ip;
+                            AddOrModifyMeshNodeTxtDataFromUdp(data, ip);
+                        }
+                    }
+
+
+
+                    mLastPacket = "!OK!: " + mLastPacket;
+
+
 
                 } else {
                     Thread.sleep(500);
-                    mLastPacket = String.format("null socket  %d",iter);
+                    mLastPacketError = String.format("null socket  %d",iter);
                 }
-            } catch (Exception e) {
+            }
+            catch (SocketTimeoutException e) {
+
+            }
+            catch (Exception e) {
                 //Log.e(" UDP client has IOException", "error: ", e);
                 //run = false;
                 //udpSocket.close();
-                mLastPacket = String.format("run %d %d",iter,mListeners.size()) + e.getMessage() + e.getCause();
+               mLastPacketError =  errorCode + String.format("error: %d %d %d",iter, iterAfter, mListeners.size()) + e.getCause()+ e.getMessage();
             }
         }
 

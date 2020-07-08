@@ -192,7 +192,7 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
                         if (mpdit != null) {
                             //mTextViewLatLng.setText(String.format("%d:%02d  %.5f  %.5f", minutes, seconds, mpdit.mLat, mpdit.mLng));
 
-                            mpdit.sendGpsData();
+                            //mpdit.sendGpsData();
 
                             //mTextViewLatLng.setText(String.format("%d %d -- %d %d : ",mpdit.getUbiquityNodes().size(),mpdit.getGotennaNodes().size(),mSelectedTable, mSelctedID ) + mSelectedProprtyID);
 
@@ -285,7 +285,6 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
         b2.setOnClickListener(this);
 
         //mAdapter.onFilterDone(mCurrentFilter);
-
         //CreateMapBox();
 
         startTime = System.currentTimeMillis();
@@ -300,12 +299,23 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
         if (app != null) {
             MpditManager mpdit = app.getMpditManger();
             if (mpdit != null) {
-                String s = mpdit.mDisplayedName + " - " + mpdit.mID;
+                String s = mpdit.mDisplayedName + " - " + mpdit.mID + " U: " + mpdit.getUbiquityNodes().size();
                 mTextViewLatLng.setText(s);
             }
         }
 
         // TWORZYMY KOLEKCJE KONTAKTOW
+        final HomeRoomsViewModel.Result result = mActivity.getRoomsViewModel().getResult();
+        mDirectChats = result.getDirectChats();
+        String c = "Chats: ";
+        for (Room chat : mDirectChats) {
+            //c += chat.getRoomSummary().getHeroes() + " : " + chat.getRoomDisplayName(getContext());
+        }
+        //Toast.makeText(mActivity, c, Toast.LENGTH_SHORT).show();
+
+
+
+        /*
         Collection<Contact> contacts = ContactsManager.getInstance().getLocalContactsSnapshot();
         if (null != contacts) {
             String c = "Kontakty: ";
@@ -324,7 +334,7 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
                 }
             }
             mTextViewLatLng.setText(c);
-        }
+        }*/
     }
 
     @Override
@@ -335,6 +345,8 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
         //refreshGroupsAndProfiles();
         //Toast.makeText(mActivity, "Map: OnResume", Toast.LENGTH_SHORT).show();
         CreateMapBox();
+
+
     }
 
     @Override
@@ -354,9 +366,11 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
     public void onRoomResultUpdated(final HomeRoomsViewModel.Result result) {
         if (isResumed()) {
             //mAdapter.setInvitation(mActivity.getRoomInvitations());
-            mDirectChats = result.getDirectChatsWithFavorites();
+            //mDirectChats = result.getDirectChatsWithFavorites();
             //mAdapter.setRooms(mDirectChats);
         }
+
+        mDirectChats = result.getDirectChats();//.getDirectChatsWithFavorites();
     }
 
     /*
@@ -438,6 +452,18 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
                             // uruchamiamy chat z ubiquity bezpośrednio
                             // TO DO !!!
                             // trzeba sprawdzic czy mamy połaczenie z serwerem, ale jak? można wykorzystać do tego okno dialogowe jakie użyliśmy na początku
+                            for(Room room: mDirectChats) {
+                            //for(int i=0; i < mDirectChats.size(); i++) {
+                                for(String id: room.getRoomSummary().getHeroes()) {
+                                    if(node.ID.compareTo(id) == 0) {
+                                        // uruchamiamy połączenie z tym pokojem, na razie wystarczy toast
+                                        //Toast.makeText(mActivity, "Znaleziono kontakt", Toast.LENGTH_SHORT).show();
+
+                                        openRoom(room);
+                                        return;
+                                    }
+                                }
+                            }
 
 
 
@@ -527,6 +553,8 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
                     if (app != null) {
                         MpditManager mpdit = app.getMpditManger();
                         if (mpdit != null) {
+                            //Toast.makeText(mActivity, mpdit.mLastPacket + "\t\n" + mpdit.mLastPacketError, Toast.LENGTH_LONG).show();
+
                             // petla po ubiquity
                             {
                                 Vector<MeshNode> nodes = mpdit.getUbiquityNodes();
@@ -757,13 +785,15 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
                 {
                     Vector<MeshNode> nodes = mpdit.getUbiquityNodes();
                     for(int i=0; i<nodes.size(); i++) {
-                        MeshNode n = nodes.get(i);
-                        Feature featureOne = Feature.fromGeometry(
-                                Point.fromLngLat(n.lng, n.lat));
-                        featureOne.addStringProperty(PROPERTY_ID, Integer.toString(i));
-                        featureOne.addBooleanProperty(PROPERTY_SELECTED, false);
-                        featureOne.addBooleanProperty(PROPERTY_VISIBLE, true);
-                        markerCoordinatesUbiquity.add(featureOne);
+                        if(nodes.get(i).visibleOnMap) {
+                            MeshNode n = nodes.get(i);
+                            Feature featureOne = Feature.fromGeometry(
+                                    Point.fromLngLat(n.lng, n.lat));
+                            featureOne.addStringProperty(PROPERTY_ID, Integer.toString(i));
+                            featureOne.addBooleanProperty(PROPERTY_SELECTED, false);
+                            featureOne.addBooleanProperty(PROPERTY_VISIBLE, true);
+                            markerCoordinatesUbiquity.add(featureOne);
+                        }
                     }
                 }
 
@@ -895,10 +925,12 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
             mButtonMapObject.setVisibility(View.INVISIBLE);
         }
 
+
         if(mTextViewLatLng != null)
         {
             mTextViewLatLng.setText(" - ");
 
+            /*
             String c = "kontakty: ";
             for(int i=0; i < mDirectChats.size(); i++)
             {
@@ -907,8 +939,12 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
                 //mDirectChats.get(i).getD
             }
 
-            mTextViewLatLng.setText(c);
+            //mTextViewLatLng.setText(c);
+
+             */
         }
+
+
     }
 
     /**
