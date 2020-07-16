@@ -47,11 +47,17 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
 
     @Override
     public void onIncomingMessage(String sender, String text) {
-        if(null != mRecyclerView && null != mAdapter) {
-            mAdapter.notifyDataSetChanged();
-            mRecyclerView.scrollToPosition(mAdapter.getItemCount()-1);
 
-            Toast.makeText(getActivity(), sender + ": " + text, Toast.LENGTH_SHORT).show();
+        if(null != mRecyclerView && null != mAdapter) {
+
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mAdapter.notifyDataSetChanged();
+                mRecyclerView.scrollToPosition(mAdapter.getItemCount()-1);
+                Toast.makeText(getActivity(), sender + ": " + text, Toast.LENGTH_SHORT).show();
+            }
+        });
         }
     }
 
@@ -259,6 +265,7 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
     public void onResume() {
         super.onResume();
 
+
     }
 
     @Override
@@ -276,9 +283,11 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
 
     @Override
     public void onDetach() {
-        super.onDetach();
         MpditManager mpdit = getMpditManager();
         if(null != mpdit) mpdit.goTennaMessageListener = null;
+
+        super.onDetach();
+
     }
 
     /*
@@ -302,10 +311,19 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
                 // wysyłamy wiadomość
                 EditText et = getActivity().findViewById(R.id.gotennaSendMessageEditText);
                 if (null != et) {
-                    if(mpdit.isGotennaConnected()) {
+                    if(mpdit.isGotennaConnected())
+                        Toast.makeText(getActivity(), "Brak połączenia z goTenną - wiadomość zostanie wysłana przez bramkę Ubiquity", Toast.LENGTH_SHORT).show();
+
+                    {
                         String messageText = et.getText().toString();
                         if(messageText.length() < mpdit.GOTENNA_MESSAGE_BYTE_LIMIT) {
-                            mpdit.goTennaSendTextMessage(mGID, messageText);
+
+                            try {
+                                mpdit.goTennaSendTextMessage(mGID, messageText);
+                            } catch (Exception e) {
+                                Toast.makeText(getActivity(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+
                             Toast.makeText(getActivity(), messageText, Toast.LENGTH_SHORT).show();
                             et.setText("");
                             // refresh recycler
@@ -314,7 +332,7 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
                             mAdapter.notifyDataSetChanged();
                             mRecyclerView.scrollToPosition(mAdapter.getItemCount() - 1);
                         } else { Toast.makeText(getActivity(), "Wiadomość jest za długa", Toast.LENGTH_SHORT).show(); }
-                    } else { Toast.makeText(getActivity(), "Brak połączenia z goTenną", Toast.LENGTH_SHORT).show(); }
+                    } //else { Toast.makeText(getActivity(), "Brak połączenia z goTenną", Toast.LENGTH_SHORT).show(); }
 
                 } else { Toast.makeText(getActivity(), "EditText = null", Toast.LENGTH_SHORT).show(); }
 

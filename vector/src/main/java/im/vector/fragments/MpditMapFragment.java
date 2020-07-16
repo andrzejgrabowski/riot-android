@@ -291,6 +291,7 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
         timerHandler.postDelayed(timerRunnable,1500);
         mTextViewLatLng = getActivity().findViewById(R.id.map_box_lat_lng);
         mButtonMapObject = getActivity().findViewById(R.id.buttonMapBoxObject);
+        mButtonMapObject.setOnClickListener(this);
 
         if(mButtonMapObject != null)
             mButtonMapObject.setVisibility(View.INVISIBLE);
@@ -435,6 +436,9 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
 
     private void startChat() {
 
+
+        //Toast.makeText(mActivity, "GoTenna chat ", Toast.LENGTH_SHORT).show();
+
         VectorApp app = VectorApp.getInstance();
         if (null == app)    return;
 
@@ -484,6 +488,9 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
                             MeshNode node = nodes.get(mSelctedID);
                             // uruchamiamy chat z gotenna bezpośrednio lub przez bramke ubiquity
                             // funkca sendMessage sama dobiera odpowiedni tryb
+
+                            Toast.makeText(mActivity, "GoTenna: " + node.name + " " + node.ID, Toast.LENGTH_LONG).show();
+
                             mpdit.goTennaSetChatUser(node.ID, node.name, MpditManager.CHAT_MODE_GOTENNA);
                             {
                                 final Intent chatIntent = new Intent(mActivity, GoTennaChatActivity.class); //VectorHomeActivity.this
@@ -549,6 +556,10 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
                     double maxLat = l.getLatitude() + 0.001;
                     double minLng = l.getLongitude() - 0.001;
                     double maxLng = l.getLongitude() + 0.001;
+                    int goTennaSize = 0;
+                    int goTennaOnMap = 0;
+                    int mpditOnMap = 0;
+                    int ubiquityOnMap = 0;
                     VectorApp app = VectorApp.getInstance();
                     if (app != null) {
                         MpditManager mpdit = app.getMpditManger();
@@ -559,20 +570,24 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
                             {
                                 Vector<MeshNode> nodes = mpdit.getUbiquityNodes();
                                 for(int i=0; i<nodes.size(); i++)
-                                {
-                                    MeshNode n = nodes.get(i);
-                                    if(n.lat > maxLat)      maxLat = n.lat;
-                                    if(n.lat < minLat)      minLat = n.lat;
-                                    if(n.lng > maxLng)      maxLng = n.lng;
-                                    if(n.lng < minLng)      minLng = n.lng;
-                                }
+                                    if(nodes.get(i).visibleOnMap)
+                                    {
+                                        ubiquityOnMap++;
+                                        MeshNode n = nodes.get(i);
+                                        if(n.lat > maxLat)      maxLat = n.lat;
+                                        if(n.lat < minLat)      minLat = n.lat;
+                                        if(n.lng > maxLng)      maxLng = n.lng;
+                                        if(n.lng < minLng)      minLng = n.lng;
+                                    }
                             }
                             // petla po gotenna
                             {
                                 Vector<MeshNode> nodes = mpdit.getGotennaNodes();
+                                goTennaSize = nodes.size();
                                 for(int i=0; i<nodes.size(); i++)
                                 if(nodes.get(i).visibleOnMap)
                                 {
+                                    goTennaOnMap++;
                                     MeshNode n = nodes.get(i);
                                     if(n.lat > maxLat)      maxLat = n.lat;
                                     if(n.lat < minLat)      minLat = n.lat;
@@ -585,13 +600,14 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
                                 Vector<MeshNode> nodes = mpdit.getMpditNodes();
                                 for(int i=0; i<nodes.size(); i++)
                                     if(nodes.get(i).visibleOnMap)
-                                {
-                                    MeshNode n = nodes.get(i);
-                                    if(n.lat > maxLat)      maxLat = n.lat;
-                                    if(n.lat < minLat)      minLat = n.lat;
-                                    if(n.lng > maxLng)      maxLng = n.lng;
-                                    if(n.lng < minLng)      minLng = n.lng;
-                                }
+                                    {
+                                        mpditOnMap++;
+                                        MeshNode n = nodes.get(i);
+                                        if(n.lat > maxLat)      maxLat = n.lat;
+                                        if(n.lat < minLat)      minLat = n.lat;
+                                        if(n.lng > maxLng)      maxLng = n.lng;
+                                        if(n.lng < minLng)      minLng = n.lng;
+                                    }
                             }
                         }
                     }
@@ -610,6 +626,8 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
                             .build();
 
                     mapboxMap.easeCamera(CameraUpdateFactory.newLatLngBounds(latLngBounds, 50), 3000);
+
+                    Toast.makeText(mActivity, " M: " + mpditOnMap + " G: " + goTennaOnMap + " U: " + ubiquityOnMap, Toast.LENGTH_SHORT).show();
                 }
                 break;
             default:
@@ -777,6 +795,9 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
         List<Feature> markerCoordinatesGotenna = new ArrayList<>();
         List<Feature> markerCoordinatesMpdit = new ArrayList<>();
 
+        int goTennaOnMap = 0;
+        int goTennaSize = 0;
+
         VectorApp app = VectorApp.getInstance();
         if (app != null) {
             MpditManager mpdit = app.getMpditManger();
@@ -784,6 +805,7 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
                 // petla po ubiquity
                 {
                     Vector<MeshNode> nodes = mpdit.getUbiquityNodes();
+
                     for(int i=0; i<nodes.size(); i++) {
                         if(nodes.get(i).visibleOnMap) {
                             MeshNode n = nodes.get(i);
@@ -793,6 +815,7 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
                             featureOne.addBooleanProperty(PROPERTY_SELECTED, false);
                             featureOne.addBooleanProperty(PROPERTY_VISIBLE, true);
                             markerCoordinatesUbiquity.add(featureOne);
+
                         }
                     }
                 }
@@ -800,6 +823,7 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
                 // petla po gotenna
                 {
                     Vector<MeshNode> nodes = mpdit.getGotennaNodes();
+                    goTennaSize = nodes.size();
                     for(int i=0; i<nodes.size(); i++)
                     if(nodes.get(i).visibleOnMap)  {
                         MeshNode n = nodes.get(i);
@@ -809,6 +833,7 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
                         featureOne.addBooleanProperty(PROPERTY_SELECTED, false);
                         featureOne.addBooleanProperty(PROPERTY_VISIBLE, true);
                         markerCoordinatesGotenna.add(featureOne);
+                        goTennaOnMap++;
                     }
                 }
 
@@ -853,6 +878,8 @@ public class MpditMapFragment extends AbsHomeFragment  implements PermissionsLis
         ubiquityCollection = FeatureCollection.fromFeatures(markerCoordinatesUbiquity);
         gotennaCollection = FeatureCollection.fromFeatures(markerCoordinatesGotenna);
         mpditCollection = FeatureCollection.fromFeatures(markerCoordinatesMpdit);
+
+
     }
 
     @Override

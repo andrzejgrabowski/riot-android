@@ -591,6 +591,10 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
 
     public void sendGoTennaMessagesByGateWay(DatagramSocket SocketSend)
     {
+        // adres bramki musi być różny od mDeviceIP i localhost
+        if(mGatewayIP.compareTo(mDeviceIP) == 0)    return;
+        if(mGatewayIP.compareTo("127.0.0.1") == 0)    return;
+
         for (GoTennaMessage m : mGoTennaMessagesToSendByGateway) {
             if(m.getMessageStatus() == GoTennaMessage.MessageStatus.SENDING) {
                 try {
@@ -765,6 +769,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
 
         if (goTennaMessageListener != null)     goTennaMessageListener.onIncomingMessage(sender_name,message_text);
     }
+
     public String AddOrModifyMeshNodeGpsDataFromUdp(String data, String ip)
     {
         String errorCode = "X1";
@@ -1310,6 +1315,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
 
     public boolean isGotennaConnected() {
         if(null == gtConnectionManager)     return false;
+        if(goTennaNeedInit)                 return false;
         return gtConnectionManager.isConnected();
     }
 
@@ -1348,7 +1354,6 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
             sender = node;
         }
 
-        sender.visibleOnMap = true;
 
         /*
         w paczce przesyłamy:
@@ -1356,13 +1361,37 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         1 Lng
         */
 
-        try {
-            sender.lat = Double.parseDouble(s[0]);
-        } catch (Exception e) {}
+
+        double lat = -1.0;
+        double lng = -1.0;
+        boolean godLL = true;
 
         try {
-            sender.lng = Double.parseDouble(s[1]);
-        } catch (Exception e) {}
+            lat = Double.parseDouble(s[0]);
+        } catch (Exception e) {
+
+            try {
+                s[0] = s[0].replace(',','.');
+                lat = Double.parseDouble(s[0]);
+            } catch (Exception ee) { godLL = false; }
+        }
+
+
+        try {
+            lng = Double.parseDouble(s[1]);
+        } catch (Exception e) {
+            try {
+                s[1] = s[1].replace(',','.');
+                lng = Double.parseDouble(s[1]);
+            } catch (Exception ee) { godLL = false; }
+        }
+
+        if(godLL) {
+            sender.visibleOnMap = true;
+            sender.lat = lat;
+            sender.lng = lng;
+        }
+
 
 
     }
@@ -1374,7 +1403,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         String[] s = data.split("\t");
         if(s.length < 2)    return;
 
-        if(s.length > 2)
+        if(s.length >= 4) // lat lng ip senderName
         {
             // paczka z Ubiquity przesłąna przez bramkę
             goTennaIncominMessageGPSfromGateway(incomingMessage);
@@ -1406,8 +1435,6 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
             sender = node;
         }
 
-        sender.visibleOnMap = true;
-        //sender.data = incomingMessage.text;
 
 
         /*
@@ -1416,54 +1443,95 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
         1 Lng
         */
 
-        try {
-            sender.lat = Double.parseDouble(s[0]);
-        } catch (Exception e) {}
+        double lat = -1.0;
+        double lng = -1.0;
+        boolean godLL = true;
 
         try {
-            sender.lng = Double.parseDouble(s[1]);
-        } catch (Exception e) {}
+            lat = Double.parseDouble(s[0]);
+        } catch (Exception e) {
+            try {
+                s[0] = s[0].replace(',','.');
+                lat = Double.parseDouble(s[0]);
+            } catch (Exception ee) { godLL = false; }
+        }
 
 
+        try {
+            lng = Double.parseDouble(s[1]);
+        } catch (Exception e) {
+            try {
+                s[1] = s[1].replace(',','.');
+                lng = Double.parseDouble(s[1]);
+            } catch (Exception ee) { godLL = false; }
+        }
+
+        if(godLL) {
+            sender.visibleOnMap = true;
+            sender.lat = lat;
+            sender.lng = lng;
+        }
+
+
+        if (goTennaMessageListener != null)
+            try {
+
+                //goTennaMessageListener.onIncomingMessage(sender.name, ": GPS " + lat + "  " + lng + " " + sender.visibleOnMap);
+            } catch (Exception ee) {}
 
 
     }
 
     private void goTennaIncominMessageText(GoTennaMessage incomingMessage) {
+
+
         MeshNode sender = null;
         incomingMessage.fromHost = false;
         Date currentTime = Calendar.getInstance().getTime();
         incomingMessage.time = currentTime.toString();
 
-        String gid = Long.toString(incomingMessage.getSenderGID());
-        int n = -1;
-        for(int i = 0 ; i < mNodesGotenna.size(); i++ ) {
-            MeshNode node = mNodesGotenna.get(i);
-            if (gid.compareTo(node.ID) == 0) {
-                n = i;
-                sender = node;
-                break;
+        try {
+            // usuwamy header
+            incomingMessage.text_only = incomingMessage.text.substring(3);
+
+            String gid = Long.toString(incomingMessage.getSenderGID());
+            int n = -1;
+            for (int i = 0; i < mNodesGotenna.size(); i++) {
+                MeshNode node = mNodesGotenna.get(i);
+                if (gid.compareTo(node.ID) == 0) {
+                    n = i;
+                    sender = node;
+                    break;
+                }
             }
+
+            if (null == sender) {
+                MeshNode node = new MeshNode();
+                node.name = "???";
+                node.ID = gid;
+                node.lat = 52.20;
+                node.lng = 21.05;
+                node.IP = "127.0.0.1";
+                node.data = "?";
+                node.visibleOnMap = false;
+                addGotennaNode(node);//mNodesGotenna.add(node);
+
+                sender = node;
+                n = mNodesGotenna.size() - 1;
+            }
+
+            if (sender != null)
+                sender.messages.add(incomingMessage);
+
+            if (goTennaMessageListener != null)
+                goTennaMessageListener.onIncomingMessage(sender.name, incomingMessage.text_only);
+        } catch (Exception e) {
+
+            if (goTennaMessageListener != null)
+                try {
+                    goTennaMessageListener.onIncomingMessage("Wyjatek: ", e.getMessage());
+                } catch (Exception ee) {}
         }
-
-        if(null == sender) {
-            MeshNode node = new MeshNode();
-            node.name = "???";
-            node.ID = gid;
-            node.lat = 52.20;
-            node.lng = 21.05;
-            node.IP = "127.0.0.1";
-            node.data = "?";
-            node.visibleOnMap = false;
-            addGotennaNode(node);//mNodesGotenna.add(node);
-
-            sender = node;
-            n = mNodesGotenna.size() - 1;
-        }
-
-        sender.messages.add(incomingMessage);
-
-        if (goTennaMessageListener != null)     goTennaMessageListener.onIncomingMessage(sender.name,incomingMessage.text.substring(3));
     }
 
 
@@ -1522,25 +1590,29 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
             return;
 
 
+        try {
 
-        String header = incomingMessage.text.substring(0,3);
-        //incomingMessage.text = incomingMessage.text.substring(3);
-        //if (goTennaMessageListener != null)     goTennaMessageListener.onIncomingMessage(header, incomingMessage.text.substring(3));
+            String header = incomingMessage.text.substring(0, 3);
+            //incomingMessage.text = incomingMessage.text.substring(3);
+            //if (goTennaMessageListener != null)     goTennaMessageListener.onIncomingMessage(header, incomingMessage.text.substring(3));
 
-        if(header.compareTo("TXT") == 0) {
-            goTennaIncominMessageText(incomingMessage);
-            return;
-        }
+            if (header.compareTo("TXT") == 0) {
+                goTennaIncominMessageText(incomingMessage);
+                return;
+            }
 
-        if(header.compareTo("GTW") == 0) {
-            goTennaIncominMessageTextByGateway(incomingMessage);
-            return;
-        }
+            if (header.compareTo("GTW") == 0) {
+                goTennaIncominMessageTextByGateway(incomingMessage);
+                return;
+            }
 
 
-        if(header.compareTo("GPS") == 0) {
-            goTennaIncominMessageGPS(incomingMessage);
-            return;
+            if (header.compareTo("GPS") == 0) {
+                goTennaIncominMessageGPS(incomingMessage);
+                return;
+            }
+        } catch (Exception e) {
+            // TO DO !!!
         }
 
     }
@@ -1576,7 +1648,11 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
                                     @Override
                                     public void onMessageResponseReceived()   {
                                         if (goTennaMessageListener != null) {
-                                            goTennaMessageListener.onMessageResponseReceived();
+                                            try {
+                                                goTennaMessageListener.onMessageResponseReceived();
+                                            } catch (Exception e) {
+                                                // TO DO !!!
+                                            }
                                             //messageToSend.milisReceived = System.currentTimeMillis();
                                         }
                                     }
@@ -1599,9 +1675,15 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
             messageToSend.time = currentTime.toString();
             messageToSend.messageID = mLastGotennaMessageIdSentByGateway;
             // formatowanie TXT \t GID \t SENDER_NAME \t MESSAGE_ID \t MESSAGE_TEXT
-            messageToSend.text = String.format("TXT\t%d\t%s\t%d\t%s",gid,mDisplayedName,messageToSend.messageID,messageText);
+            messageToSend.text = String.format("TXT\t%s\t%s\t%d\t%s",gid,mDisplayedName,messageToSend.messageID,messageText);
             mGoTennaMessagesToSendByGateway.add(messageToSend);
             mLastGotennaMessageIdSentByGateway++;
+
+            for(MeshNode node: mNodesGotenna) {
+                if(gid.compareTo(node.ID) == 0) {
+                    node.messages.add(messageToSend);
+                }
+            }
 
             return;
         }
