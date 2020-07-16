@@ -134,6 +134,8 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
                     String t = gm.time;
                     if(gm.milisReceived > gm.milisSend)
                         t += String.format(" ping: %d ms", gm.milisReceived - gm.milisSend);
+                    //if (!gm.fromHost)
+                        t += String.format(" hop: %d ", gm.getHopCount());
                     time.setText(t);
                     time.setVisibility(View.VISIBLE);
                 }
