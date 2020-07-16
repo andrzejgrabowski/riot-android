@@ -497,7 +497,10 @@ class Gateway:
         # formatowanie: GPS \t LAT \t LNG \t ID \t NAME \t NETWORK_TYPE
         # ID - matrix ID
         #   TO DO !!!
-        if(tab[0] == "GPS"): 
+        if(tab[0] == "GPS"):
+            # na wszelki wypadek infromujemy, ze jestesmy bramka
+            self.udpTransport.sendto(bytes("GTW", "utf-8"), (ip, self.portUDP))
+             
             lat = tab[1]
             lng = tab[2]
             #id = tab[3]
