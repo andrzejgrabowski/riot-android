@@ -158,12 +158,14 @@ public class GoTennaMessage
 
     public static GoTennaMessage createMessageFromData(GTTextOnlyMessageData gtTextOnlyMessageData)
     {
-        return new GoTennaMessage(gtTextOnlyMessageData.getSenderGID(),
+        GoTennaMessage gm = new GoTennaMessage(gtTextOnlyMessageData.getSenderGID(),
                 gtTextOnlyMessageData.getRecipientGID(),
                 gtTextOnlyMessageData.getMessageSentDate(),
                 gtTextOnlyMessageData.getText(),
                 MessageStatus.SENT_SUCCESSFULLY,
                 getDetailInfo(gtTextOnlyMessageData));
+        gm.setHopCount( gtTextOnlyMessageData.getHopCount() );
+        return  gm;
     }
 
     private static String getDetailInfo(GTBaseMessageData gtBaseMessageData)
