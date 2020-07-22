@@ -162,13 +162,14 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
     private Vector<MeshNode> mNodesGotenna = new Vector<MeshNode>();
     private Vector<MeshNode> mNodesMpdit = new Vector<MeshNode>();
 
-    // co mBroadcastDelay sekund wysyłane są dane do wszystkich użytkowników sieci
-    int mBroadcastDelay = 30;
-    int mGoTennaBroadcastDelay = 60;
 
     // zmian liczby węzłów
     public NodesListener mNodesListener = null;
 
+
+    // co mBroadcastDelay sekund wysyłane są dane do wszystkich użytkowników sieci
+    int mBroadcastDelay = 20;
+    int mGoTennaBroadcastDelay = 20;
 
 
     // konstruktor
@@ -508,6 +509,11 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
     }
 
     private void addGotennaNode(MeshNode node) {
+        String gid = String.format("%d",mGoTennaGID);
+        // nie dodajemy sami siebie
+        if(node.ID.compareTo(gid) == 0)
+            return;
+
         mNodesGotenna.add(node);
         if(null != mNodesListener)
             mNodesListener.onNodesCountChanged();
@@ -1410,6 +1416,10 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
             return;
         }
 
+        // lat lng senderName
+        String name = "???";
+        if(s.length >= 3) name = s[2];
+
         MeshNode sender = null;
         String gid = Long.toString(incomingMessage.getSenderGID());
         int n = -1;
@@ -1418,13 +1428,16 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
             if (gid.compareTo(node.ID) == 0) {
                 n = i;
                 sender = node;
+                // aktualizujemy nazwę wyświetlaną
+                if(sender.name.compareTo("???") == 0)
+                    sender.name = name;
                 break;
             }
         }
 
         if(null == sender) {
             MeshNode node = new MeshNode();
-            node.name = "???";
+            node.name = name;
             node.ID = gid;
             node.lat = 52.20;
             node.lng = 21.05;

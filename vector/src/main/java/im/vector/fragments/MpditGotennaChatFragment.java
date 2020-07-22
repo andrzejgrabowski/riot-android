@@ -313,7 +313,8 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
                 // wysyłamy wiadomość
                 EditText et = getActivity().findViewById(R.id.gotennaSendMessageEditText);
                 if (null != et) {
-                    if(mpdit.isGotennaConnected())
+                    // informujemy o tym, że nie ma połączenia z gotennaa
+                    if(!mpdit.isGotennaConnected())
                         Toast.makeText(getActivity(), "Brak połączenia z goTenną - wiadomość zostanie wysłana przez bramkę Ubiquity", Toast.LENGTH_SHORT).show();
 
                     {
@@ -326,7 +327,8 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
                                 Toast.makeText(getActivity(), e.getMessage(), Toast.LENGTH_SHORT).show();
                             }
 
-                            Toast.makeText(getActivity(), messageText, Toast.LENGTH_SHORT).show();
+                            // nie musimy wyświetlać nowej wiadomości - powinien się dodać automatycznie nowy dymek
+                            //Toast.makeText(getActivity(), messageText, Toast.LENGTH_SHORT).show();
                             et.setText("");
                             // refresh recycler
                             // TO DO !!!
