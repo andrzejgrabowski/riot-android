@@ -55,6 +55,8 @@ class Gateway:
 
         :param bytes gotenna_sdk_token: The token to pass to the goTenna driver instance.
         """
+        self.goTennaSendCounter = 1
+
         settings_dict = None
         with open('setting_defaults.json') as f:
             settings_dict = json.load(f)
@@ -290,7 +292,10 @@ class Gateway:
         self._storage.store()
 
     def forward_private(self, payload, from_external, destination):
-        print(f"GoTenna send message: {payload.message} to {destination.gid_val}")
+        payload.set_counter(self.goTennaSendCounter)
+        self.goTennaSendCounter = self.goTennaSendCounter + 1
+        print(f"GoTenna send message: {payload.message} to {destination.gid_val} with counter: {payload._counter}")
+        
         # pylint: disable=line-too-long
         """ Forward a message from the external network to a private message on the goTenna network.
 
@@ -349,7 +354,7 @@ class Gateway:
             lng = tab[1]
             name = tab[2]
             m = f"GPS\t{lat}\t{lng}\t{gid}\t{name}\tG"
-            print(m)
+            #print("Send GPS data to Ubiquity network: " + m)
             for u in self._ubiquityNodes:
                 self.udpTransport.sendto(bytes(m, "utf-8"), (u._IP, self.portUDP))
 
@@ -508,11 +513,13 @@ class Gateway:
             # sprawdzamy jaki czas minął od ostatniego pakietu GPS z tego adresu IP
             # jezeli jest dłuższy od 60s to wysyłamy dane do goTenna
             message = "GPS" + lat + "\t" + lng + "\t" + ip + "\t" + senderName
-            payload = goTenna.payload.TextPayload(message)
-            if(millis - node._timeOfLastGpsDataReceived > 60000): 
+            
+            if(millis - node._timeOfLastGpsDataReceived > 90000): 
                 # petla po wszystkich wezłach goTenna
                 for g in self._gotennaNodes:
+                    payload = goTenna.payload.TextPayload(message)
                     self.forward_private(payload,g._GID,g._GID)
+                    time.sleep(100/1000)
                 node._timeOfLastGpsDataReceived = millis
             
 
