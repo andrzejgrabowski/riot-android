@@ -169,7 +169,7 @@ public class MpditManager implements LocationListener, Runnable, GTConnectionMan
 
     // co mBroadcastDelay sekund wysyłane są dane do wszystkich użytkowników sieci
     int mBroadcastDelay = 20;
-    int mGoTennaBroadcastDelay = 20;
+    int mGoTennaBroadcastDelay = 40;
 
 
     // konstruktor

@@ -313,7 +313,7 @@ public class MpditGotennaChatFragment extends VectorBaseFragment implements View
                 // wysyłamy wiadomość
                 EditText et = getActivity().findViewById(R.id.gotennaSendMessageEditText);
                 if (null != et) {
-                    // informujemy o tym, że nie ma połączenia z gotennaa
+                    // informujemy o tym, że nie ma połączenia z gotenna
                     if(!mpdit.isGotennaConnected())
                         Toast.makeText(getActivity(), "Brak połączenia z goTenną - wiadomość zostanie wysłana przez bramkę Ubiquity", Toast.LENGTH_SHORT).show();
 
