@@ -1,0 +1,98 @@
+#!/usr/bin/env python
+# ~*~ coding: utf-8 ~*~
+
+import subprocess
+import logging
+import sys
+import os
+import glob
+
+def _do_command(cmd, dry_run, verbose):
+    print(' '.join(cmd))
+    if dry_run: return True
+    if verbose:
+        sub_stdout = sys.stdout
+    else:
+        sub_stdout = None
+    try:
+        subprocess.check_call(cmd, stdout=sub_stdout, stderr=sys.stderr)
+    except subprocess.CalledProcessError as e:
+        logging.critical("Command {} failed with code {}".format(' '.join(cmd),
+                                                                 e.returncode))
+        return False
+    else:
+        return True
+
+def _build_venv_command(python, venvdir):
+    invoked_py_version = [int(v) for v in subprocess.check_output([python, '--version']).split(' ')[1].split('.')]
+    if invoked_py_version[0] < 3 or invoked_py_version[1] < 3:
+        venv_command = ['pyvenv', venvdir]
+    else:
+        venv_command = [python, '-m', 'venv', venvdir]
+    return venv_command
+
+def do_setup(python, use_virtualenv=None, dry_run=False, keep_going=False, verbose=False):
+    """ Execute the required setup steps.
+
+    Returns an error code: 0 for success, something else for failure.
+
+    If use_virtualenv is specified, create a virtualenv in the specified directory and install the Python packages there instead of to the system.
+    If dry_run is True, print the commands it would run to stdout but do not run them.
+    If keep_going is True, do not terminate on an error.
+    If verbose is True, give commands our stdout. They are always given our stderr.
+    """
+
+    apt_packages = ['libffi-dev', 'python-dev', 'libssl-dev']
+    pip_packages = ['pyserial', 'cryptography', 'six', 'spidev']
+    apt_commands = [['apt-get', 'update']] + [['apt-get', '-y', 'install', package]
+                                              for package in apt_packages]
+    if use_virtualenv:
+        venv_script = 'mkdir -p {0}; {1}; source {0}/bin/activate;'\
+                      ' {2}; deactivate; cp -r goTenna {0};'\
+                      ' cp spi_connection.py {0}; cp rf_defaults.json {0}'\
+                      .format(use_virtualenv,
+                              ' '.join(_build_venv_command(python, use_virtualenv)),
+                              'python -m pip install {}'.format(' '.join(pip_packages)))
+        pip_commands = [['su', 'pi', '-c', venv_script]]
+    else:
+        pip_commands = [[python, '-m', 'pip', 'install', '--upgrade', 'pip']]\
+                       + [[python, '-m', 'pip', 'install'] + (['-v'] if verbose else []) + [package]
+                          for package in pip_packages]
+    install_command = [['su', 'pi', '-c',
+                        'tar xf {} -C {}'.format(glob.glob('goTenna-*.tar.gz')[0],
+                                                 use_virtualenv if use_virtualenv else '.')]]
+    spi_command = [['sed', '-i.bak', 's/#dtparam=spi=on/dtparam=spi=on/', '/boot/config.txt']]
+    reboot_command = [['reboot']]
+    ok = True
+    for command in apt_commands + pip_commands + spi_command + install_command + reboot_command:
+        ok &= _do_command(command, dry_run, verbose)
+        if not ok and not keep_going:
+            return -1
+    return 0 if ok else -1
+
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(
+        'Prepare a Raspberry Pi 3 to run the goTenna Embedded Pro sample app. This requires sudo since it installs packages, modifies the boot config (to enable SPI) and reboots the system. Please run once with --dry-run to see the commands that will be executed.')
+    parser.add_argument('-d', '--dry-run', action='store_true',
+                        help='Log the commands to execute but do not execute them')
+    parser.add_argument('-k', '--keep-going', action='store_true',
+                        help='Continue the script if an individual command fails')
+    parser.add_argument('-p', '--python', help='Which python to use. Should be an invokeable binary (like python3)', default='python3')
+    parser.add_argument('-v', '--verbose', action='count', help='Logging verbosity')
+    parser.add_argument('-e', '--use-virtualenv', help='Specify a directory to create python virtual environment in, where the python packages will be installed. If not specified, the packages will be installed to the system.', default=None)
+    loglevel_verbosity_map = {0: logging.WARNING,
+                              1: logging.INFO,
+                              2: logging.DEBUG}
+    args = parser.parse_args()
+    logging.basicConfig(stream=sys.stderr,
+                        level=loglevel_verbosity_map.get(args.verbose,
+                                                         logging.DEBUG))
+    try:
+        subprocess.check_call([args.python, '--version'], stderr=sys.stderr)
+    except subprocess.CalledProcessError as e:
+        logging.critical('{} is not available: {}'.format(args.python, e.returncode))
+        exit(e.returncode)
+    exit(do_setup(args.python, args.use_virtualenv,
+                  args.dry_run, args.keep_going,
+                  args.verbose >= 2))

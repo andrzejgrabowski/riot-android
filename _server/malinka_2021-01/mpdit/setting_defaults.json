@@ -1,0 +1,29 @@
+{
+    "sdk_token":    "RgIJCQMNEEQVQxlBUAsbHxwBQldHUlgDB0NSAxdRHx4LAwtZRFgLVw4DR1gcXgQE",
+    "gid":    "9999",
+    "port":    "6666",
+    "pro":
+    {
+        "rf_settings":
+        {
+            "power_enum": 0,
+            "control_freqs": [445000000,446000000,447000000],
+            "data_freqs": [448000000,449000000,450000000,451000000,452000000,453000000,454000000,455000000,456000000,457000000,458000000,459000000,460000000],
+            "bandwidth": 11.8
+        },
+        "___spi_settings":
+        {
+            "bus_no": 0,
+            "chip_no": 0,
+            "request_gpio": 22,
+            "ready_gpio": 27
+        }
+    },
+    "mesh":
+    {
+        "geo_settings":
+        {
+            "region": 1
+        }
+    }
+}

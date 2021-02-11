@@ -1,0 +1,4 @@
+[INFO:2020-06-26 10:51:01,608:__main__] {'sdk_token': 'RgIJCQMNEEQVQxlBUAsbHxwBQldHUlgDB0NSAxdRHx4LAwtZRFgLVw4DR1gcXgQE', 'pro': {'rf_settings': {'power_enum': 0, 'control_freqs': [150000000], 'data_freqs': [151000000], 'bandwidth': 11.8}, '___spi_settings': {'bus_no': 0, 'chip_no': 0, 'request_gpio': 22, 'ready_gpio': 27}}, 'mesh': {'geo_settings': {'region': 1}}}
+[INFO:2020-06-26 10:51:01,609:__main__] <RFSettings:valid, control_freqs=[150000000], data_freqs=[151000000], power=0, bandwidth=11.80 kHz>
+[INFO:2020-06-26 10:51:01,610:__main__] <GeoSettings:valid, region=1>
+[INFO:2020-06-26 10:51:01,689:goTenna.driver.Driver] Driver started
